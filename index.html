@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="el">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QR Code Generator</title>
+  <title>Δημιουργός QR Code</title>
   <script src="https://unpkg.com/qr-code-styling@1.9.2/lib/qr-code-styling.js"></script>
   <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <style>
@@ -21,7 +21,7 @@
       --clr-accent-l:#eff6ff; --clr-text:#1a1d23; --clr-muted:#6b7280;
       --r-sm:4px; --r-md:8px; --r-lg:12px; --r-xl:16px; --r-full:9999px;
       --shadow-sm:0 1px 3px rgba(0,0,0,.08); --shadow-md:0 4px 16px rgba(0,0,0,.10);
-      --sidebar-w:336px;
+      --sidebar-w:440px;
     }
 
     /* ─── Layout ──────────────────────────────────────────────── */
@@ -187,6 +187,45 @@
     #logo-warning { display:none; background:#fef3c7; border:1px solid #f59e0b; border-radius:var(--r-sm); padding:6px 8px; font-size:11px; color:#92400e; margin-top:6px; }
     #logo-warning.visible { display:block; }
 
+    /* ─── Clear All button (sidebar header area) ───────────────── */
+    #clear-all-btn {
+      display:flex; align-items:center; gap:5px;
+      padding:5px 10px; font-size:11px; font-weight:600;
+      border:1px solid #fca5a5; border-radius:var(--r-full);
+      background:#fef2f2; color:#ef4444; cursor:pointer;
+      transition:background .12s,border-color .12s;
+    }
+    #clear-all-btn:hover { background:#fee2e2; border-color:#f87171; }
+
+    /* ─── Confirm Modal ──────────────────────────────────────────── */
+    #confirm-overlay {
+      display:none; position:fixed; inset:0; z-index:9999;
+      background:rgba(0,0,0,.45); backdrop-filter:blur(4px);
+      align-items:center; justify-content:center;
+    }
+    #confirm-overlay.visible { display:flex; }
+    #confirm-modal {
+      background:white; border-radius:var(--r-xl); padding:28px 28px 24px;
+      max-width:360px; width:calc(100% - 40px);
+      box-shadow:0 20px 60px rgba(0,0,0,.2);
+      animation:modalIn .18s ease;
+    }
+    @keyframes modalIn {
+      from { transform:scale(.94); opacity:0; }
+      to   { transform:scale(1);   opacity:1; }
+    }
+    #confirm-modal .modal-icon { font-size:32px; margin-bottom:12px; }
+    #confirm-modal h2 { font-size:17px; font-weight:700; color:var(--clr-text); margin-bottom:8px; }
+    #confirm-modal p  { font-size:13px; color:var(--clr-muted); line-height:1.5; margin-bottom:20px; }
+    #confirm-modal .modal-actions { display:flex; gap:10px; }
+    #confirm-cancel { flex:1; padding:10px; border:1px solid var(--clr-border); border-radius:var(--r-md); background:white; font-size:13px; font-weight:600; cursor:pointer; color:var(--clr-text); transition:background .12s; }
+    #confirm-cancel:hover { background:var(--clr-panel); }
+    #confirm-ok { flex:1; padding:10px; border:none; border-radius:var(--r-md); background:#ef4444; font-size:13px; font-weight:600; cursor:pointer; color:white; transition:background .12s; }
+    #confirm-ok:hover { background:#dc2626; }
+
+    @media (max-width:900px) {
+      :root { --sidebar-w:340px; }
+    }
     @media (max-width:768px) {
       #app { flex-direction:column; }
       #sidebar { width:100%; min-width:unset; border-right:none; border-bottom:1px solid var(--clr-border); max-height:50vh; }
@@ -200,76 +239,82 @@
   <!-- ═══════════════ SIDEBAR ═══════════════════════════════ -->
   <aside id="sidebar">
     <div id="sidebar-header">
-      <h1>QR Generator</h1>
-      <p>Design, customise &amp; export</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <h1>Δημιουργός QR Code</h1>
+          <p>Σχεδιασμός, προσαρμογή &amp; εξαγωγή</p>
+        </div>
+        <button id="clear-all-btn" onclick="confirmClearAll()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          Εκκαθάριση
+        </button>
+      </div>
     </div>
 
     <div id="sidebar-scroll">
 
-      <!-- 1. Content -->
+      <!-- 1. Περιεχόμενο -->
       <div class="acc-section" id="sec-content">
         <div class="acc-header" onclick="toggleAcc('sec-content')">
-          <span class="acc-title"><span class="acc-title-icon">✏️</span>Content</span>
+          <span class="acc-title"><span class="acc-title-icon">✏️</span>Περιεχόμενο</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
           <div class="field-full">
-            <span class="field-label">URL or text</span>
+            <span class="field-label">URL ή κείμενο</span>
             <textarea id="qr-text" placeholder="https://example.com" spellcheck="false">https://example.com</textarea>
           </div>
         </div>
       </div>
 
-      <!-- 2. Templates — FIRST after content -->
+      <!-- 2. Πρότυπα -->
       <div class="acc-section" id="sec-tpl">
         <div class="acc-header" onclick="toggleAcc('sec-tpl')">
-          <span class="acc-title"><span class="acc-title-icon">✨</span>Templates</span>
+          <span class="acc-title"><span class="acc-title-icon">✨</span>Πρότυπα</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body" id="template-body"><!-- filled by JS --></div>
       </div>
 
-      <!-- 3. Dot Style -->
+      <!-- 3. Στυλ Κουκκίδων -->
       <div class="acc-section collapsed" id="sec-dots">
         <div class="acc-header" onclick="toggleAcc('sec-dots')">
-          <span class="acc-title"><span class="acc-title-icon">⬛</span>Dot Style</span>
+          <span class="acc-title"><span class="acc-title-icon">⬛</span>Στυλ Κουκκίδων</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
           <div class="type-grid" id="dot-type-grid"></div>
-          <!-- Solid / Gradient tabs -->
+          <!-- Μονόχρωμο / Ντεγκραντέ -->
           <div class="color-mode-tabs">
-            <button class="color-mode-tab active" data-target="dot" data-mode="solid">Solid</button>
-            <button class="color-mode-tab" data-target="dot" data-mode="gradient">Gradient</button>
+            <button class="color-mode-tab active" data-target="dot" data-mode="solid">Μονόχρωμο</button>
+            <button class="color-mode-tab" data-target="dot" data-mode="gradient">Ντεγκραντέ</button>
           </div>
-          <!-- Solid panel -->
           <div class="color-panel visible" id="dot-solid-panel">
             <div class="field-row">
-              <span class="field-label">Colour</span>
+              <span class="field-label">Χρώμα</span>
               <div class="color-row">
                 <input type="color" id="dot-color-picker" value="#000000">
                 <input type="text" class="hex-input" id="dot-color-hex" value="#000000" maxlength="7">
               </div>
             </div>
           </div>
-          <!-- Gradient panel -->
           <div class="color-panel" id="dot-gradient-panel">
             <div class="field-row">
-              <span class="field-label">Type</span>
+              <span class="field-label">Τύπος</span>
               <select class="gradient-type-select" id="dot-grad-type">
-                <option value="linear">Linear</option>
-                <option value="radial">Radial</option>
+                <option value="linear">Γραμμικό</option>
+                <option value="radial">Ακτινωτό</option>
               </select>
             </div>
             <div class="field-row">
-              <span class="field-label">Colour 1</span>
+              <span class="field-label">Χρώμα 1</span>
               <div class="color-row">
                 <input type="color" id="dot-grad-c1" value="#000000">
                 <input type="text" class="hex-input" id="dot-grad-c1-hex" value="#000000" maxlength="7">
               </div>
             </div>
             <div class="field-row">
-              <span class="field-label">Colour 2</span>
+              <span class="field-label">Χρώμα 2</span>
               <div class="color-row">
                 <input type="color" id="dot-grad-c2" value="#2563eb">
                 <input type="text" class="hex-input" id="dot-grad-c2-hex" value="#2563eb" maxlength="7">
@@ -277,7 +322,7 @@
             </div>
             <div class="slider-row">
               <div class="slider-header">
-                <span class="field-label">Rotation</span>
+                <span class="field-label">Περιστροφή</span>
                 <span class="slider-val" id="dot-grad-rot-val">0°</span>
               </div>
               <input type="range" id="dot-grad-rot" min="0" max="360" value="0">
@@ -286,21 +331,21 @@
         </div>
       </div>
 
-      <!-- 4. Corner Squares -->
+      <!-- 4. Γωνιακά Τετράγωνα -->
       <div class="acc-section collapsed" id="sec-csq">
         <div class="acc-header" onclick="toggleAcc('sec-csq')">
-          <span class="acc-title"><span class="acc-title-icon">◼</span>Corner Squares</span>
+          <span class="acc-title"><span class="acc-title-icon">◼</span>Γωνιακά Τετράγωνα</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
           <div class="type-grid" id="csq-type-grid"></div>
           <div class="color-mode-tabs">
-            <button class="color-mode-tab active" data-target="csq" data-mode="solid">Solid</button>
-            <button class="color-mode-tab" data-target="csq" data-mode="gradient">Gradient</button>
+            <button class="color-mode-tab active" data-target="csq" data-mode="solid">Μονόχρωμο</button>
+            <button class="color-mode-tab" data-target="csq" data-mode="gradient">Ντεγκραντέ</button>
           </div>
           <div class="color-panel visible" id="csq-solid-panel">
             <div class="field-row">
-              <span class="field-label">Colour</span>
+              <span class="field-label">Χρώμα</span>
               <div class="color-row">
                 <input type="color" id="csq-color-picker" value="#000000">
                 <input type="text" class="hex-input" id="csq-color-hex" value="#000000" maxlength="7">
@@ -309,21 +354,21 @@
           </div>
           <div class="color-panel" id="csq-gradient-panel">
             <div class="field-row">
-              <span class="field-label">Type</span>
+              <span class="field-label">Τύπος</span>
               <select class="gradient-type-select" id="csq-grad-type">
-                <option value="linear">Linear</option>
-                <option value="radial">Radial</option>
+                <option value="linear">Γραμμικό</option>
+                <option value="radial">Ακτινωτό</option>
               </select>
             </div>
             <div class="field-row">
-              <span class="field-label">Colour 1</span>
+              <span class="field-label">Χρώμα 1</span>
               <div class="color-row">
                 <input type="color" id="csq-grad-c1" value="#000000">
                 <input type="text" class="hex-input" id="csq-grad-c1-hex" value="#000000" maxlength="7">
               </div>
             </div>
             <div class="field-row">
-              <span class="field-label">Colour 2</span>
+              <span class="field-label">Χρώμα 2</span>
               <div class="color-row">
                 <input type="color" id="csq-grad-c2" value="#2563eb">
                 <input type="text" class="hex-input" id="csq-grad-c2-hex" value="#2563eb" maxlength="7">
@@ -333,21 +378,21 @@
         </div>
       </div>
 
-      <!-- 5. Corner Dots -->
+      <!-- 5. Γωνιακές Κουκκίδες -->
       <div class="acc-section collapsed" id="sec-cdot">
         <div class="acc-header" onclick="toggleAcc('sec-cdot')">
-          <span class="acc-title"><span class="acc-title-icon">●</span>Corner Dots</span>
+          <span class="acc-title"><span class="acc-title-icon">●</span>Γωνιακές Κουκκίδες</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
           <div class="type-grid" id="cdot-type-grid"></div>
           <div class="color-mode-tabs">
-            <button class="color-mode-tab active" data-target="cdot" data-mode="solid">Solid</button>
-            <button class="color-mode-tab" data-target="cdot" data-mode="gradient">Gradient</button>
+            <button class="color-mode-tab active" data-target="cdot" data-mode="solid">Μονόχρωμο</button>
+            <button class="color-mode-tab" data-target="cdot" data-mode="gradient">Ντεγκραντέ</button>
           </div>
           <div class="color-panel visible" id="cdot-solid-panel">
             <div class="field-row">
-              <span class="field-label">Colour</span>
+              <span class="field-label">Χρώμα</span>
               <div class="color-row">
                 <input type="color" id="cdot-color-picker" value="#000000">
                 <input type="text" class="hex-input" id="cdot-color-hex" value="#000000" maxlength="7">
@@ -356,21 +401,21 @@
           </div>
           <div class="color-panel" id="cdot-gradient-panel">
             <div class="field-row">
-              <span class="field-label">Type</span>
+              <span class="field-label">Τύπος</span>
               <select class="gradient-type-select" id="cdot-grad-type">
-                <option value="linear">Linear</option>
-                <option value="radial">Radial</option>
+                <option value="linear">Γραμμικό</option>
+                <option value="radial">Ακτινωτό</option>
               </select>
             </div>
             <div class="field-row">
-              <span class="field-label">Colour 1</span>
+              <span class="field-label">Χρώμα 1</span>
               <div class="color-row">
                 <input type="color" id="cdot-grad-c1" value="#000000">
                 <input type="text" class="hex-input" id="cdot-grad-c1-hex" value="#000000" maxlength="7">
               </div>
             </div>
             <div class="field-row">
-              <span class="field-label">Colour 2</span>
+              <span class="field-label">Χρώμα 2</span>
               <div class="color-row">
                 <input type="color" id="cdot-grad-c2" value="#2563eb">
                 <input type="text" class="hex-input" id="cdot-grad-c2-hex" value="#2563eb" maxlength="7">
@@ -380,120 +425,116 @@
         </div>
       </div>
 
-      <!-- 6. Background -->
+      <!-- 6. Φόντο -->
       <div class="acc-section collapsed" id="sec-bg">
         <div class="acc-header" onclick="toggleAcc('sec-bg')">
-          <span class="acc-title"><span class="acc-title-icon">🎨</span>Background</span>
+          <span class="acc-title"><span class="acc-title-icon">🎨</span>Φόντο</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
-          <!-- 3-way tab: Transparent / Solid / Gradient -->
           <div class="bg-mode-tabs">
-            <button class="bg-mode-tab" data-bg="transparent">Transparent</button>
-            <button class="bg-mode-tab active" data-bg="solid">Solid</button>
-            <button class="bg-mode-tab" data-bg="gradient">Gradient</button>
+            <button class="bg-mode-tab" data-bg="transparent">Διαφανές</button>
+            <button class="bg-mode-tab active" data-bg="solid">Μονόχρωμο</button>
+            <button class="bg-mode-tab" data-bg="gradient">Ντεγκραντέ</button>
           </div>
-          <!-- Solid panel -->
           <div class="color-panel visible" id="bg-solid-panel">
             <div class="field-row">
-              <span class="field-label">Colour</span>
+              <span class="field-label">Χρώμα</span>
               <div class="color-row">
                 <input type="color" id="bg-color-picker" value="#ffffff">
                 <input type="text" class="hex-input" id="bg-color-hex" value="#ffffff" maxlength="7">
               </div>
             </div>
           </div>
-          <!-- Gradient panel -->
           <div class="color-panel" id="bg-gradient-panel">
             <div class="field-row">
-              <span class="field-label">Type</span>
+              <span class="field-label">Τύπος</span>
               <select class="gradient-type-select" id="bg-grad-type">
-                <option value="linear">Linear</option>
-                <option value="radial">Radial</option>
+                <option value="linear">Γραμμικό</option>
+                <option value="radial">Ακτινωτό</option>
               </select>
             </div>
             <div class="field-row">
-              <span class="field-label">Colour 1</span>
+              <span class="field-label">Χρώμα 1</span>
               <div class="color-row">
                 <input type="color" id="bg-grad-c1" value="#ffffff">
                 <input type="text" class="hex-input" id="bg-grad-c1-hex" value="#ffffff" maxlength="7">
               </div>
             </div>
             <div class="field-row">
-              <span class="field-label">Colour 2</span>
+              <span class="field-label">Χρώμα 2</span>
               <div class="color-row">
                 <input type="color" id="bg-grad-c2" value="#e0f2fe">
                 <input type="text" class="hex-input" id="bg-grad-c2-hex" value="#e0f2fe" maxlength="7">
               </div>
             </div>
           </div>
-          <!-- Transparent panel (informational) -->
           <div class="color-panel" id="bg-transparent-panel">
-            <p style="font-size:11px;color:var(--clr-muted);padding:4px 0">Background will be transparent — PNG and SVG will have no fill.</p>
+            <p style="font-size:11px;color:var(--clr-muted);padding:4px 0">Το φόντο θα είναι διαφανές — PNG και SVG χωρίς γέμισμα.</p>
           </div>
         </div>
       </div>
 
-      <!-- 7. Logo / Image -->
+      <!-- 7. Λογότυπο / Εικόνα -->
       <div class="acc-section collapsed" id="sec-logo">
         <div class="acc-header" onclick="toggleAcc('sec-logo')">
-          <span class="acc-title"><span class="acc-title-icon">🖼️</span>Logo / Image</span>
+          <span class="acc-title"><span class="acc-title-icon">🖼️</span>Λογότυπο / Εικόνα</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
-          <p class="section-label">Built-in Icons</p>
+          <p class="section-label">Ενσωματωμένα Εικονίδια</p>
           <div class="icon-grid" id="icon-grid"></div>
           <button class="clear-btn" id="icon-clear-btn">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Remove image
+            Αφαίρεση εικόνας
           </button>
           <div class="divider"></div>
-          <p class="section-label">Upload your own</p>
+          <p class="section-label">Ανέβασμα δικής σας</p>
           <div class="upload-area" onclick="document.getElementById('logo-file-input').click()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Upload image
+            Ανέβασμα εικόνας
           </div>
           <input type="file" id="logo-file-input" accept="image/*" style="display:none">
           <div class="divider"></div>
           <div class="slider-row">
-            <div class="slider-header"><span class="field-label">Logo size</span><span class="slider-val" id="logo-size-val">40%</span></div>
+            <div class="slider-header"><span class="field-label">Μέγεθος λογοτύπου</span><span class="slider-val" id="logo-size-val">40%</span></div>
             <input type="range" id="logo-size" min="10" max="60" value="40">
           </div>
           <div class="slider-row">
-            <div class="slider-header"><span class="field-label">Logo margin</span><span class="slider-val" id="logo-margin-val">4</span></div>
+            <div class="slider-header"><span class="field-label">Περιθώριο λογοτύπου</span><span class="slider-val" id="logo-margin-val">4</span></div>
             <input type="range" id="logo-margin" min="0" max="20" value="4">
           </div>
           <div class="check-row">
             <input type="checkbox" id="logo-hide-dots" checked>
-            <label for="logo-hide-dots">Hide dots under logo</label>
+            <label for="logo-hide-dots">Απόκρυψη κουκκίδων κάτω από λογότυπο</label>
           </div>
-          <div id="logo-warning">⚠ Logo is large — use Error Correction H for reliable scanning.</div>
+          <div id="logo-warning">⚠ Το λογότυπο είναι μεγάλο — χρησιμοποιήστε Διόρθωση Σφαλμάτων Η για αξιόπιστη ανάγνωση.</div>
         </div>
       </div>
 
-      <!-- 8. Border & Margin -->
+      <!-- 8. Περίγραμμα & Περιθώριο -->
       <div class="acc-section collapsed" id="sec-margin">
         <div class="acc-header" onclick="toggleAcc('sec-margin')">
-          <span class="acc-title"><span class="acc-title-icon">⬜</span>Border &amp; Margin</span>
+          <span class="acc-title"><span class="acc-title-icon">⬜</span>Περίγραμμα &amp; Περιθώριο</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
           <div class="slider-row">
-            <div class="slider-header"><span class="field-label">Quiet zone (px)</span><span class="slider-val" id="margin-val">10</span></div>
+            <div class="slider-header"><span class="field-label">Ήσυχη ζώνη (px)</span><span class="slider-val" id="margin-val">10</span></div>
             <input type="range" id="qr-margin" min="0" max="50" value="10">
           </div>
         </div>
       </div>
 
-      <!-- 9. Error Correction -->
+      <!-- 9. Διόρθωση Σφαλμάτων -->
       <div class="acc-section collapsed" id="sec-ec">
         <div class="acc-header" onclick="toggleAcc('sec-ec')">
-          <span class="acc-title"><span class="acc-title-icon">🛡️</span>Error Correction</span>
+          <span class="acc-title"><span class="acc-title-icon">🛡️</span>Διόρθωση Σφαλμάτων</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
           <div class="field-row">
-            <span class="field-label">Level</span>
+            <span class="field-label">Επίπεδο</span>
             <div class="segmented" id="ec-segmented">
               <button data-val="L">L</button>
               <button data-val="M" class="active">M</button>
@@ -501,7 +542,7 @@
               <button data-val="H">H</button>
             </div>
           </div>
-          <p style="font-size:11px;color:var(--clr-muted);margin-top:4px">L=7% · M=15% · Q=25% · H=30% recovery. Use H when adding a logo.</p>
+          <p style="font-size:11px;color:var(--clr-muted);margin-top:4px">L=7% · M=15% · Q=25% · H=30% ανάκτηση. Χρησιμοποιήστε Η όταν προσθέτετε λογότυπο.</p>
         </div>
       </div>
 
@@ -509,7 +550,7 @@
 
     <!-- Download panel -->
     <div id="download-panel">
-      <div id="download-panel-header">Export</div>
+      <div id="download-panel-header">Εξαγωγή</div>
       <div id="download-row">
         <select id="resolution-select">
           <option value="1024">1024 px</option>
@@ -532,22 +573,35 @@
   <!-- ═══════════════ PREVIEW ════════════════════════════════ -->
   <main id="preview-area">
     <div id="undo-toolbar">
-      <button class="undo-btn" id="btn-undo" onclick="undoState()" disabled title="Undo (Ctrl+Z)">
+      <button class="undo-btn" id="btn-undo" onclick="undoState()" disabled title="Αναίρεση (Ctrl+Z)">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M3 13C5.5 7 11 4 17 6.5 21 8.5 22 13 21 17"/></svg>
       </button>
-      <button class="undo-btn" id="btn-redo" onclick="redoState()" disabled title="Redo (Ctrl+Y)">
+      <button class="undo-btn" id="btn-redo" onclick="redoState()" disabled title="Επαναφορά (Ctrl+Y)">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M21 13C18.5 7 13 4 7 6.5 3 8.5 2 13 3 17"/></svg>
       </button>
-      <span id="toolbar-label">QR Preview</span>
+      <span id="toolbar-label">Προεπισκόπηση QR</span>
     </div>
     <div id="qr-preview-wrap">
       <div id="qr-preview"></div>
     </div>
     <div id="preview-meta">
-      <span id="meta-ec">EC: M</span>
+      <span id="meta-ec">ΔΣ: M</span>
       <span id="meta-size">360 × 360</span>
     </div>
   </main>
+</div>
+
+<!-- ═══════════════ CONFIRMATION MODAL ════════════════════ -->
+<div id="confirm-overlay">
+  <div id="confirm-modal">
+    <div class="modal-icon">🗑️</div>
+    <h2>Εκκαθάριση όλων;</h2>
+    <p>Αυτή η ενέργεια θα επαναφέρει <strong>όλες</strong> τις ρυθμίσεις στις προεπιλογές και θα διαγράψει το αποθηκευμένο προφίλ. Η ενέργεια <strong>δεν αναιρείται</strong>.</p>
+    <div class="modal-actions">
+      <button id="confirm-cancel" onclick="closeClearModal()">Ακύρωση</button>
+      <button id="confirm-ok" onclick="executeClearAll()">Ναι, εκκαθάριση</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -571,82 +625,43 @@ const SVI = {
 };
 
 const DOT_TYPES = [
-  { val:'square',         label:'Square',    icon:SVI.dotSquare },
-  { val:'rounded',        label:'Rounded',   icon:SVI.dotRounded },
-  { val:'dots',           label:'Dots',      icon:SVI.dotDots },
-  { val:'classy',         label:'Classy',    icon:SVI.dotClassy },
-  { val:'classy-rounded', label:'Classy R.', icon:SVI.dotClassyR },
-  { val:'extra-rounded',  label:'Extra R.',  icon:SVI.dotExtraR },
+  { val:'square',         label:'Τετράγωνο',  icon:SVI.dotSquare },
+  { val:'rounded',        label:'Στρογγυλό',  icon:SVI.dotRounded },
+  { val:'dots',           label:'Κύκλοι',     icon:SVI.dotDots },
+  { val:'classy',         label:'Κλασικό',    icon:SVI.dotClassy },
+  { val:'classy-rounded', label:'Κλασ. Στρ.', icon:SVI.dotClassyR },
+  { val:'extra-rounded',  label:'Εξ. Στρ.',   icon:SVI.dotExtraR },
 ];
 const CSQ_TYPES = [
-  { val:'square',        label:'Square',  icon:SVI.eyeSquare },
-  { val:'extra-rounded', label:'Rounded', icon:SVI.eyeRounded },
-  { val:'dot',           label:'Dot',     icon:SVI.eyeDot },
+  { val:'square',        label:'Τετράγωνο', icon:SVI.eyeSquare },
+  { val:'extra-rounded', label:'Στρογγυλό', icon:SVI.eyeRounded },
+  { val:'dot',           label:'Κύκλος',    icon:SVI.eyeDot },
 ];
 const CDOT_TYPES = [
-  { val:'square', label:'Square', icon:SVI.innerSquare },
-  { val:'dot',    label:'Dot',    icon:SVI.innerDot },
+  { val:'square', label:'Τετράγωνο', icon:SVI.innerSquare },
+  { val:'dot',    label:'Κύκλος',    icon:SVI.innerDot },
 ];
 
 /* ══════════════════════════════════════════════════════════
-   SIMPLE ICONS (MIT licence — simpleicons.org)
-   Brand colours from the Simple Icons project
+   ICONS — loaded dynamically from icons/icons.json + SVG files
+   Each entry: { id, label, file, svgEl (populated at runtime) }
 ══════════════════════════════════════════════════════════ */
-function makeIcon(color, path, viewBox) {
-  viewBox = viewBox || '0 0 24 24';
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="26" height="26" fill="${color}"><path d="${path}"/></svg>`;
-}
+let ICONS = []; // populated by loadIcons()
 
-const ICONS = [
-  {
-    id:'facebook', label:'Facebook', color:'#1877F2',
-    svgEl: makeIcon('#1877F2', 'M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z')
-  },
-  {
-    id:'instagram', label:'Instagram', color:'#E4405F',
-    svgEl: makeIcon('#E4405F', 'M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077')
-  },
-  {
-    id:'linkedin', label:'LinkedIn', color:'#0A66C2',
-    svgEl: makeIcon('#0A66C2', 'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z')
-  },
-  {
-    id:'x', label:'X / Twitter', color:'#000000',
-    svgEl: makeIcon('#000000', 'M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z')
-  },
-  {
-    id:'youtube', label:'YouTube', color:'#FF0000',
-    svgEl: makeIcon('#FF0000', 'M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z')
-  },
-  {
-    id:'tiktok', label:'TikTok', color:'#000000',
-    svgEl: makeIcon('#000000', 'M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z')
-  },
-  {
-    id:'whatsapp', label:'WhatsApp', color:'#25D366',
-    svgEl: makeIcon('#25D366', 'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z')
-  },
-  {
-    id:'snapchat', label:'Snapchat', color:'#FFFC00',
-    svgEl: makeIcon('#FFBE00', 'M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301.165-.088.344-.104.464-.104.182 0 .359.029.509.09.45.149.734.479.734.838.015.449-.39.839-1.213 1.168-.089.029-.209.075-.344.119-.45.135-1.139.36-1.333.81-.09.224-.061.524.12.868l.015.015c.06.136 1.526 3.475 4.791 4.014.255.044.435.27.42.509 0 .075-.015.149-.045.225-.24.569-1.273.988-3.146 1.271-.059.091-.12.375-.164.57-.029.179-.074.36-.134.553-.076.271-.27.405-.555.405h-.03c-.135 0-.313-.031-.538-.074-.36-.075-.765-.135-1.273-.135-.3 0-.599.015-.913.074-.6.104-1.123.464-1.723.884-.853.599-1.826 1.288-3.294 1.288-.06 0-.119-.015-.18-.015h-.149c-1.468 0-2.427-.675-3.279-1.288-.599-.42-1.107-.779-1.707-.884-.314-.045-.629-.074-.928-.074-.54 0-.958.089-1.272.149-.211.043-.391.074-.54.074-.374 0-.523-.224-.583-.42-.061-.192-.09-.389-.135-.567-.046-.181-.105-.494-.166-.57-1.918-.222-2.95-.642-3.189-1.226-.031-.063-.052-.15-.055-.225-.015-.243.165-.465.42-.509 3.264-.54 4.73-3.879 4.791-4.02l.016-.029c.18-.345.224-.645.119-.869-.195-.434-.884-.658-1.332-.809-.121-.029-.24-.074-.346-.119-1.107-.435-1.257-.93-1.197-1.273.09-.479.674-.793 1.168-.793.146 0 .27.029.383.074.42.194.789.3 1.104.3.234 0 .384-.06.465-.105l-.046-.569c-.098-1.626-.225-3.651.307-4.837C7.392 1.077 10.739.807 11.727.807l.419-.015h.06z')
-  },
-  {
-    id:'globe', label:'Website', color:'#2563eb',
-    svgEl: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#2563eb" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><ellipse cx="12" cy="12" rx="4" ry="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>`
-  },
-  {
-    id:'email', label:'Email', color:'#6b7280',
-    svgEl: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#6b7280" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>`
-  },
-  {
-    id:'phone', label:'Phone', color:'#16a34a',
-    svgEl: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26" fill="#16a34a"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg>`
-  },
-  {
-    id:'location', label:'Location', color:'#ef4444',
-    svgEl: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26" fill="#ef4444"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>`
-  },
-];
+async function loadIcons() {
+  try {
+    const res  = await fetch('icons/icons.json');
+    const list = await res.json();
+    // Fetch all SVG files in parallel
+    const svgTexts = await Promise.all(
+      list.map(icon => fetch(icon.file).then(r => r.text()).catch(() => ''))
+    );
+    ICONS = list.map((icon, i) => ({ ...icon, svgEl: svgTexts[i] }));
+  } catch(e) {
+    console.warn('Icon load failed, icons grid will be empty.', e);
+    ICONS = [];
+  }
+}
 
 /* ══════════════════════════════════════════════════════════
    TEMPLATES
@@ -686,7 +701,7 @@ const TEMPLATES = {
   ],
   business: [
     {
-      id:'corporate', label:'Corporate',
+      id:'corporate', label:'Εταιρικό',
       opts:{
         dotsOptions:{ type:'rounded', color:'#1a2b4a' },
         cornersSquareOptions:{ type:'extra-rounded', color:'#1a2b4a' },
@@ -696,7 +711,7 @@ const TEMPLATES = {
       }
     },
     {
-      id:'minimal', label:'Minimal',
+      id:'minimal', label:'Μινιμαλ',
       opts:{
         dotsOptions:{ type:'square', color:'#b0b0b0' },
         cornersSquareOptions:{ type:'square', color:'#b0b0b0' },
@@ -706,7 +721,7 @@ const TEMPLATES = {
       }
     },
     {
-      id:'bold', label:'Bold',
+      id:'bold', label:'Έντονο',
       opts:{
         dotsOptions:{ type:'dots', color:'#000000' },
         cornersSquareOptions:{ type:'dot', color:'#000000' },
@@ -728,7 +743,7 @@ const TEMPLATES = {
       }
     },
     {
-      id:'soft', label:'Soft',
+      id:'soft', label:'Απαλό',
       opts:{
         dotsOptions:{ type:'dots', color:'#7c6f9c' },
         cornersSquareOptions:{ type:'extra-rounded', color:'#c9a8e0' },
@@ -738,7 +753,7 @@ const TEMPLATES = {
       }
     },
     {
-      id:'gradient', label:'Gradient',
+      id:'gradient', label:'Ντεγκραντέ',
       opts:{
         dotsOptions:{ type:'rounded', gradient:{ type:'linear', rotation:0.785, colorStops:[{offset:0,color:'#0ea5e9'},{offset:1,color:'#8b5cf6'}] } },
         cornersSquareOptions:{ type:'extra-rounded', color:'#0ea5e9' },
@@ -751,9 +766,9 @@ const TEMPLATES = {
 };
 
 /* ══════════════════════════════════════════════════════════
-   STATE
+   DEFAULT OPTIONS (used for clear-all reset)
 ══════════════════════════════════════════════════════════ */
-const options = {
+const DEFAULT_OPTIONS = {
   width:360, height:360, type:'canvas',
   data:'https://example.com',
   margin:10,
@@ -764,6 +779,11 @@ const options = {
   cornersDotOptions:{ color:'#000000', type:'square' },
   backgroundOptions:{ color:'#ffffff' },
 };
+
+/* ══════════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════════ */
+const options = deepClone(DEFAULT_OPTIONS);
 
 // Track dot/corner colour modes: 'solid' or 'gradient'
 const colorModes = { dot:'solid', csq:'solid', cdot:'solid', bg:'solid' };
@@ -789,6 +809,74 @@ function sanitiseOptions(opts) {
 }
 
 /* ══════════════════════════════════════════════════════════
+   LOCALSTORAGE PERSISTENCE
+══════════════════════════════════════════════════════════ */
+const STORAGE_KEY = 'qrgen_config_v1';
+
+function saveToStorage() {
+  try {
+    const payload = { options: deepClone(options), colorModes: deepClone(colorModes) };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch(e) {}
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const payload = JSON.parse(raw);
+    if (!payload || !payload.options) return false;
+    // Restore options
+    Object.assign(options, payload.options);
+    // Restore colorModes
+    if (payload.colorModes) Object.assign(colorModes, payload.colorModes);
+    return true;
+  } catch(e) { return false; }
+}
+
+function clearStorage() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+}
+
+/* ══════════════════════════════════════════════════════════
+   CONFIRM MODAL (Clear All)
+══════════════════════════════════════════════════════════ */
+function confirmClearAll() {
+  document.getElementById('confirm-overlay').classList.add('visible');
+}
+function closeClearModal() {
+  document.getElementById('confirm-overlay').classList.remove('visible');
+}
+function executeClearAll() {
+  closeClearModal();
+  // Reset options to defaults
+  Object.assign(options, deepClone(DEFAULT_OPTIONS));
+  // Reset colorModes
+  colorModes.dot = 'solid'; colorModes.csq = 'solid'; colorModes.cdot = 'solid'; colorModes.bg = 'solid';
+  // Clear active template
+  activeTemplate = null;
+  document.querySelectorAll('.tpl-btn').forEach(b => b.classList.remove('active'));
+  // Reset image
+  document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('logo-warning').classList.remove('visible');
+  // Clear storage
+  clearStorage();
+  // Re-sync UI and re-render
+  syncUIFromState();
+  qrCode.update(sanitiseOptions(options));
+  // Reset history
+  stateHistory.length = 0;
+  historyIndex = -1;
+  pushHistory();
+  updateMeta();
+}
+
+// Close modal on overlay click
+document.getElementById('confirm-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeClearModal();
+});
+
+/* ══════════════════════════════════════════════════════════
    QR INSTANCE
 ══════════════════════════════════════════════════════════ */
 const qrCode = new QRCodeStyling(sanitiseOptions(options));
@@ -804,10 +892,11 @@ function triggerUpdate(skipHistory) {
     qrCode.update(sanitiseOptions(options));
     if (!skipHistory) pushHistory();
     updateMeta();
+    saveToStorage();
   }, 120);
 }
 function updateMeta() {
-  document.getElementById('meta-ec').textContent = 'EC: ' + options.qrOptions.errorCorrectionLevel;
+  document.getElementById('meta-ec').textContent = 'ΔΣ: ' + options.qrOptions.errorCorrectionLevel;
   document.getElementById('meta-size').textContent = options.width + ' × ' + options.height;
 }
 
@@ -837,6 +926,7 @@ function applySnapshot(snap) {
   qrCode.update(sanitiseOptions(options));
   updateMeta();
   updateUndoBtns();
+  saveToStorage();
 }
 function updateUndoBtns() {
   document.getElementById('btn-undo').disabled = historyIndex <= 0;
@@ -866,27 +956,22 @@ function bindColorPair(pickerId, hexId, setter) {
 function initColorModeTabs() {
   document.querySelectorAll('.color-mode-tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      const target = tab.dataset.target; // 'dot', 'csq', 'cdot'
-      const mode   = tab.dataset.mode;   // 'solid', 'gradient'
+      const target = tab.dataset.target;
+      const mode   = tab.dataset.mode;
 
-      // Update active tab within same group
       tab.closest('.color-mode-tabs').querySelectorAll('.color-mode-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
 
-      // Show/hide panels
       document.getElementById(`${target}-solid-panel`).classList.toggle('visible', mode === 'solid');
       document.getElementById(`${target}-gradient-panel`).classList.toggle('visible', mode === 'gradient');
 
       colorModes[target] = mode;
 
-      // Apply to options
       if (mode === 'solid') {
-        // Remove gradient, keep solid colour
         const color = document.getElementById(`${target}-color-picker`).value;
         options[targetKey(target)].color = color;
         delete options[targetKey(target)].gradient;
       } else {
-        // Build gradient from current gradient inputs
         rebuildGradient(target);
       }
       triggerUpdate();
@@ -973,6 +1058,8 @@ function buildIconGrid() {
     btn.className = 'icon-btn';
     btn.dataset.id = icon.id;
     btn.innerHTML = icon.svgEl + `<span>${icon.label}</span>`;
+    // Mark active if image matches
+    if (options.image === dataURL) btn.classList.add('active');
     btn.addEventListener('click', () => {
       document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -1005,7 +1092,7 @@ function checkLogoWarning() {
 function buildTemplateGrid() {
   const body = document.getElementById('template-body');
   body.innerHTML = '';
-  [['social','Social'],['business','Business'],['event','Event / Party']].forEach(([key,label]) => {
+  [['social','Κοινωνικά'],['business','Επαγγελματικά'],['event','Εκδηλώσεις']].forEach(([key,label]) => {
     const catLabel = document.createElement('div');
     catLabel.className = 'tpl-category-label';
     catLabel.textContent = label;
@@ -1018,6 +1105,7 @@ function buildTemplateGrid() {
       const card = document.createElement('button');
       card.className = 'tpl-btn';
       card.dataset.id = tpl.id;
+      if (activeTemplate === tpl.id) card.classList.add('active');
 
       const preview = document.createElement('div');
       preview.className = 'tpl-preview';
@@ -1028,7 +1116,6 @@ function buildTemplateGrid() {
       lbl.textContent = tpl.label;
       card.appendChild(lbl);
 
-      // Mini QR preview
       const miniBase = { width:52,height:52,type:'canvas',data:'Q',margin:2,qrOptions:{errorCorrectionLevel:'M'},imageOptions:{hideBackgroundDots:true,imageSize:0.4,margin:2} };
       const miniOpts = sanitiseOptions(Object.assign(miniBase, deepClone(tpl.opts)));
       miniOpts.width=52; miniOpts.height=52; miniOpts.data='Q'; miniOpts.margin=2; delete miniOpts.image;
@@ -1058,6 +1145,7 @@ function applyTemplate(tpl) {
   qrCode.update(sanitiseOptions(options));
   pushHistory();
   updateMeta();
+  saveToStorage();
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1076,7 +1164,16 @@ function syncUIFromState() {
   document.getElementById('qr-margin').value = options.margin;
   document.getElementById('margin-val').textContent = options.margin;
 
-  // Dots — detect if gradient is set, switch tab accordingly
+  // Logo sliders
+  const logoSizeVal = Math.round((options.imageOptions.imageSize || 0.4) * 100);
+  document.getElementById('logo-size').value = logoSizeVal;
+  document.getElementById('logo-size-val').textContent = logoSizeVal + '%';
+  const logoMarginVal = options.imageOptions.margin || 4;
+  document.getElementById('logo-margin').value = logoMarginVal;
+  document.getElementById('logo-margin-val').textContent = logoMarginVal;
+  document.getElementById('logo-hide-dots').checked = !!options.imageOptions.hideBackgroundDots;
+
+  // Dots — detect if gradient is set
   const dotsHasGrad = !!(options.dotsOptions && options.dotsOptions.gradient);
   setColorModeUI('dot', dotsHasGrad ? 'gradient' : 'solid');
   if (!dotsHasGrad && options.dotsOptions && options.dotsOptions.color) {
@@ -1179,7 +1276,13 @@ async function exportPDF() {
 /* ══════════════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════════════ */
-function init() {
+async function init() {
+  // Load icons from SVG files (async), then build grid
+  await loadIcons();
+
+  // Load saved config from localStorage
+  const restored = loadFromStorage();
+
   // Text
   document.getElementById('qr-text').addEventListener('input', e => {
     options.data = e.target.value || ' ';
@@ -1233,7 +1336,7 @@ function init() {
       }
     });
   });
-  // Hex inputs for gradient colours (need separate binding since bindColorPair is for solid pickers)
+  // Hex inputs for gradient colours
   ['dot-grad-c1','dot-grad-c2','csq-grad-c1','csq-grad-c2','cdot-grad-c1','cdot-grad-c2','bg-grad-c1','bg-grad-c2'].forEach(id => {
     const picker = document.getElementById(id);
     const hexId  = id + '-hex';
@@ -1300,15 +1403,21 @@ function init() {
   document.addEventListener('keydown', e => {
     if ((e.ctrlKey||e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undoState(); }
     if ((e.ctrlKey||e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redoState(); }
+    if (e.key === 'Escape') closeClearModal();
   });
 
-  // Boot
-  qrCode.update(sanitiseOptions(options));
+  // Boot — if we restored from storage, sync UI then render; otherwise fresh render
+  if (restored) {
+    syncUIFromState();
+    qrCode.update(sanitiseOptions(options));
+  } else {
+    qrCode.update(sanitiseOptions(options));
+  }
   pushHistory();
   updateMeta();
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => { init().catch(console.error); });
 </script>
 </body>
 </html>
