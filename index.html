@@ -849,22 +849,42 @@ function closeClearModal() {
 }
 function executeClearAll() {
   closeClearModal();
-  // Reset options to defaults
+
+  // ── 1. Fully replace options with a fresh deep-clone of defaults ──
+  //    Delete every key first so nothing "survives" (e.g. options.image)
+  Object.keys(options).forEach(k => delete options[k]);
   Object.assign(options, deepClone(DEFAULT_OPTIONS));
-  // Reset colorModes
-  colorModes.dot = 'solid'; colorModes.csq = 'solid'; colorModes.cdot = 'solid'; colorModes.bg = 'solid';
-  // Clear active template
+
+  // ── 2. Reset colour-mode tracker ──
+  colorModes.dot = 'solid'; colorModes.csq = 'solid';
+  colorModes.cdot = 'solid'; colorModes.bg = 'solid';
+
+  // ── 3. Clear active template highlight ──
   activeTemplate = null;
   document.querySelectorAll('.tpl-btn').forEach(b => b.classList.remove('active'));
-  // Reset image
+
+  // ── 4. Clear logo / image ──
   document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('logo-warning').classList.remove('visible');
-  // Clear storage
-  clearStorage();
-  // Re-sync UI and re-render
+  // Reset the file input so the same file can be re-uploaded
+  const fi = document.getElementById('logo-file-input');
+  if (fi) fi.value = '';
+
+  // ── 5. Rebuild type grids so active-class reflects defaults ──
+  buildTypeGrid('dot-type-grid',  DOT_TYPES,  () => options.dotsOptions.type,          v => { options.dotsOptions.type = v; });
+  buildTypeGrid('csq-type-grid',  CSQ_TYPES,  () => options.cornersSquareOptions.type, v => { options.cornersSquareOptions.type = v; });
+  buildTypeGrid('cdot-type-grid', CDOT_TYPES, () => options.cornersDotOptions.type,    v => { options.cornersDotOptions.type = v; });
+
+  // ── 6. Sync all other UI fields from the clean state ──
   syncUIFromState();
+
+  // ── 7. Re-render the QR preview ──
   qrCode.update(sanitiseOptions(options));
-  // Reset history
+
+  // ── 8. Clear localStorage ──
+  clearStorage();
+
+  // ── 9. Reset undo/redo history to a clean slate ──
   stateHistory.length = 0;
   historyIndex = -1;
   pushHistory();
