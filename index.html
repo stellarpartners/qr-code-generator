@@ -140,11 +140,14 @@
 
     /* ─── Type grid (dot/corner shape pickers) ────────────────── */
     .type-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:10px; }
-    .type-btn { display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 4px 6px; border:2px solid var(--clr-border); border-radius:var(--r-md); background:white; cursor:pointer; transition:border-color .12s,background .12s; color:var(--clr-muted); }
+    .type-btn { display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 4px 6px; border:2px solid var(--clr-border); border-radius:var(--r-md); background:white; cursor:pointer; transition:border-color .12s,background .12s; }
     .type-btn:hover { border-color:#93c5fd; }
-    .type-btn.active { border-color:var(--clr-accent); background:var(--clr-accent-l); color:var(--clr-accent); }
-    .type-btn svg { display:block; }
-    .type-btn span { font-size:10px; font-weight:500; text-align:center; line-height:1.2; }
+    .type-btn.active { border-color:var(--clr-accent); background:var(--clr-accent-l); }
+    .type-btn img { display:block; transition:filter .12s; }
+    /* Tint the shape icon blue when active — converts #374151 → ~#2563eb */
+    .type-btn.active img { filter:invert(29%) sepia(98%) saturate(1500%) hue-rotate(210deg) brightness(97%) contrast(96%); }
+    .type-btn span { font-size:10px; font-weight:500; text-align:center; line-height:1.2; color:var(--clr-muted); }
+    .type-btn.active span { color:var(--clr-accent); }
 
     /* ─── Template grid ───────────────────────────────────────── */
     .tpl-category-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--clr-muted); margin:10px 0 6px; }
@@ -608,38 +611,25 @@
 'use strict';
 
 /* ══════════════════════════════════════════════════════════
-   SHAPE PREVIEW ICONS
+   SHAPE PREVIEW ICONS — file references under shapes/
+   Active tinting is handled by the CSS filter on .type-btn.active img
 ══════════════════════════════════════════════════════════ */
-const SVI = {
-  dotSquare:       `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" fill="currentColor"/><rect x="13" y="2" width="9" height="9" fill="currentColor"/><rect x="2" y="13" width="9" height="9" fill="currentColor"/><rect x="13" y="13" width="9" height="9" fill="currentColor"/></svg>`,
-  dotRounded:      `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="3" fill="currentColor"/><rect x="13" y="2" width="9" height="9" rx="3" fill="currentColor"/><rect x="2" y="13" width="9" height="9" rx="3" fill="currentColor"/><rect x="13" y="13" width="9" height="9" rx="3" fill="currentColor"/></svg>`,
-  dotDots:         `<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="6.5" cy="6.5" r="4.5" fill="currentColor"/><circle cx="17.5" cy="6.5" r="4.5" fill="currentColor"/><circle cx="6.5" cy="17.5" r="4.5" fill="currentColor"/><circle cx="17.5" cy="17.5" r="4.5" fill="currentColor"/></svg>`,
-  dotClassy:       `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" fill="currentColor"/><rect x="13" y="2" width="9" height="9" rx="4" fill="currentColor"/><rect x="2" y="13" width="9" height="9" rx="4" fill="currentColor"/><rect x="13" y="13" width="9" height="9" fill="currentColor"/></svg>`,
-  dotClassyR:      `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="2" fill="currentColor"/><rect x="13" y="2" width="9" height="9" rx="5" fill="currentColor"/><rect x="2" y="13" width="9" height="9" rx="5" fill="currentColor"/><rect x="13" y="13" width="9" height="9" rx="2" fill="currentColor"/></svg>`,
-  dotExtraR:       `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="4.5" fill="currentColor"/><rect x="13" y="2" width="9" height="9" rx="4.5" fill="currentColor"/><rect x="2" y="13" width="9" height="9" rx="4.5" fill="currentColor"/><rect x="13" y="13" width="9" height="9" rx="4.5" fill="currentColor"/></svg>`,
-  eyeSquare:       `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="0" fill="none" stroke="currentColor" stroke-width="3"/><rect x="7" y="7" width="10" height="10" fill="currentColor"/></svg>`,
-  eyeRounded:      `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="6" fill="none" stroke="currentColor" stroke-width="3"/><rect x="7" y="7" width="10" height="10" rx="3" fill="currentColor"/></svg>`,
-  eyeDot:          `<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="12" cy="12" r="5" fill="currentColor"/></svg>`,
-  innerSquare:     `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" fill="currentColor"/></svg>`,
-  innerDot:        `<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg>`,
-};
-
 const DOT_TYPES = [
-  { val:'square',         label:'Τετράγωνο',  icon:SVI.dotSquare },
-  { val:'rounded',        label:'Στρογγυλό',  icon:SVI.dotRounded },
-  { val:'dots',           label:'Κύκλοι',     icon:SVI.dotDots },
-  { val:'classy',         label:'Κλασικό',    icon:SVI.dotClassy },
-  { val:'classy-rounded', label:'Κλασ. Στρ.', icon:SVI.dotClassyR },
-  { val:'extra-rounded',  label:'Εξ. Στρ.',   icon:SVI.dotExtraR },
+  { val:'square',         label:'Τετράγωνο',  icon:'shapes/dot-square.svg'        },
+  { val:'rounded',        label:'Στρογγυλό',  icon:'shapes/dot-rounded.svg'       },
+  { val:'dots',           label:'Κύκλοι',     icon:'shapes/dot-dots.svg'          },
+  { val:'classy',         label:'Κλασικό',    icon:'shapes/dot-classy.svg'        },
+  { val:'classy-rounded', label:'Κλασ. Στρ.', icon:'shapes/dot-classy-rounded.svg'},
+  { val:'extra-rounded',  label:'Εξ. Στρ.',   icon:'shapes/dot-extra-rounded.svg' },
 ];
 const CSQ_TYPES = [
-  { val:'square',        label:'Τετράγωνο', icon:SVI.eyeSquare },
-  { val:'extra-rounded', label:'Στρογγυλό', icon:SVI.eyeRounded },
-  { val:'dot',           label:'Κύκλος',    icon:SVI.eyeDot },
+  { val:'square',        label:'Τετράγωνο', icon:'shapes/eye-square.svg'  },
+  { val:'extra-rounded', label:'Στρογγυλό', icon:'shapes/eye-rounded.svg' },
+  { val:'dot',           label:'Κύκλος',    icon:'shapes/eye-dot.svg'     },
 ];
 const CDOT_TYPES = [
-  { val:'square', label:'Τετράγωνο', icon:SVI.innerSquare },
-  { val:'dot',    label:'Κύκλος',    icon:SVI.innerDot },
+  { val:'square', label:'Τετράγωνο', icon:'shapes/inner-square.svg' },
+  { val:'dot',    label:'Κύκλος',    icon:'shapes/inner-dot.svg'    },
 ];
 
 /* ══════════════════════════════════════════════════════════
@@ -1051,7 +1041,7 @@ function buildTypeGrid(containerId, types, getter, setter) {
   types.forEach(t => {
     const btn = document.createElement('button');
     btn.className = 'type-btn' + (getter() === t.val ? ' active' : '');
-    btn.innerHTML = t.icon + `<span>${t.label}</span>`;
+    btn.innerHTML = `<img src="${t.icon}" width="22" height="22" alt="${t.label}"><span>${t.label}</span>`;
     btn.addEventListener('click', () => {
       setter(t.val);
       c.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
