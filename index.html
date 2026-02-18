@@ -7,600 +7,201 @@
   <script src="https://unpkg.com/qr-code-styling@1.9.2/lib/qr-code-styling.js"></script>
   <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <style>
-    /* ─── Reset ─────────────────────────────────────────────── */
+    /* ─── Reset ──────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; font-family: var(--font); }
 
-    /* ─── Tokens ─────────────────────────────────────────────── */
+    /* ─── Tokens ──────────────────────────────────────────────── */
     :root {
       --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
       --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
-
-      --sp-xs: 4px;  --sp-sm: 8px;  --sp-md: 16px;
-      --sp-lg: 24px; --sp-xl: 32px;
-
-      --clr-bg:       #f5f6f8;
-      --clr-sidebar:  #ffffff;
-      --clr-border:   #e2e4e9;
-      --clr-panel:    #fafbfc;
-      --clr-accent:   #2563eb;
-      --clr-accent-h: #1d4ed8;
-      --clr-accent-l: #eff6ff;
-      --clr-text:     #1a1d23;
-      --clr-muted:    #6b7280;
-      --clr-danger:   #ef4444;
-      --clr-success:  #22c55e;
-
-      --r-sm: 4px; --r-md: 8px; --r-lg: 12px; --r-xl: 16px; --r-full: 9999px;
-      --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
-      --shadow-md: 0 4px 16px rgba(0,0,0,.10);
-
-      --sidebar-w: 330px;
+      --sp-xs:4px; --sp-sm:8px; --sp-md:16px; --sp-lg:24px; --sp-xl:32px;
+      --clr-bg:#f5f6f8; --clr-sidebar:#fff; --clr-border:#e2e4e9;
+      --clr-panel:#fafbfc; --clr-accent:#2563eb; --clr-accent-h:#1d4ed8;
+      --clr-accent-l:#eff6ff; --clr-text:#1a1d23; --clr-muted:#6b7280;
+      --r-sm:4px; --r-md:8px; --r-lg:12px; --r-xl:16px; --r-full:9999px;
+      --shadow-sm:0 1px 3px rgba(0,0,0,.08); --shadow-md:0 4px 16px rgba(0,0,0,.10);
+      --sidebar-w:336px;
     }
 
     /* ─── Layout ──────────────────────────────────────────────── */
-    #app {
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-      background: var(--clr-bg);
-    }
+    #app { display:flex; height:100vh; overflow:hidden; background:var(--clr-bg); }
 
-    /* Sidebar */
     #sidebar {
-      width: var(--sidebar-w);
-      min-width: var(--sidebar-w);
-      background: var(--clr-sidebar);
-      border-right: 1px solid var(--clr-border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+      width:var(--sidebar-w); min-width:var(--sidebar-w);
+      background:var(--clr-sidebar); border-right:1px solid var(--clr-border);
+      display:flex; flex-direction:column; overflow:hidden;
     }
-
-    #sidebar-header {
-      padding: var(--sp-md) var(--sp-md) var(--sp-sm);
-      border-bottom: 1px solid var(--clr-border);
-      flex-shrink: 0;
-    }
-    #sidebar-header h1 {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--clr-text);
-      letter-spacing: -0.3px;
-    }
-    #sidebar-header p {
-      font-size: 12px;
-      color: var(--clr-muted);
-      margin-top: 2px;
-    }
+    #sidebar-header { padding:var(--sp-md) var(--sp-md) var(--sp-sm); border-bottom:1px solid var(--clr-border); flex-shrink:0; }
+    #sidebar-header h1 { font-size:17px; font-weight:700; color:var(--clr-text); letter-spacing:-.3px; }
+    #sidebar-header p  { font-size:12px; color:var(--clr-muted); margin-top:2px; }
 
     #sidebar-scroll {
-      flex: 1;
-      overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: var(--clr-border) transparent;
+      flex:1; overflow-y:auto;
+      scrollbar-width:thin; scrollbar-color:var(--clr-border) transparent;
     }
-    #sidebar-scroll::-webkit-scrollbar { width: 4px; }
-    #sidebar-scroll::-webkit-scrollbar-thumb { background: var(--clr-border); border-radius: 2px; }
+    #sidebar-scroll::-webkit-scrollbar { width:4px; }
+    #sidebar-scroll::-webkit-scrollbar-thumb { background:var(--clr-border); border-radius:2px; }
 
-    /* Download panel */
-    #download-panel {
-      flex-shrink: 0;
-      padding: var(--sp-md);
-      border-top: 1px solid var(--clr-border);
-      background: var(--clr-sidebar);
-    }
-    #download-panel-header {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--clr-muted);
-      margin-bottom: var(--sp-sm);
-    }
-    #download-row {
-      display: flex;
-      gap: var(--sp-sm);
-      align-items: center;
-    }
-    #resolution-select {
-      font-size: 13px;
-      padding: 7px var(--sp-sm);
-      border: 1px solid var(--clr-border);
-      border-radius: var(--r-md);
-      background: white;
-      color: var(--clr-text);
-      cursor: pointer;
-      outline: none;
-    }
-    .dl-btn {
-      flex: 1;
-      padding: 8px 4px;
-      border: none;
-      border-radius: var(--r-md);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      transition: background .15s, opacity .15s;
-    }
-    .dl-btn:hover { opacity: .88; }
-    #btn-png  { background: var(--clr-accent); color: #fff; }
-    #btn-svg  { background: #0f766e; color: #fff; }
-    #btn-pdf  { background: #dc2626; color: #fff; }
-    #download-row-2 { display: flex; gap: var(--sp-sm); margin-top: var(--sp-sm); }
+    /* ─── Download panel ──────────────────────────────────────── */
+    #download-panel { flex-shrink:0; padding:var(--sp-md); border-top:1px solid var(--clr-border); background:var(--clr-sidebar); }
+    #download-panel-header { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--clr-muted); margin-bottom:var(--sp-sm); }
+    #download-row { display:flex; gap:var(--sp-sm); align-items:center; }
+    #resolution-select { font-size:13px; padding:7px var(--sp-sm); border:1px solid var(--clr-border); border-radius:var(--r-md); background:white; color:var(--clr-text); cursor:pointer; outline:none; }
+    .dl-btn { flex:1; padding:8px 4px; border:none; border-radius:var(--r-md); font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:opacity .15s; }
+    .dl-btn:hover { opacity:.85; }
+    #btn-png { background:var(--clr-accent); color:#fff; }
+    #btn-svg { background:#0f766e; color:#fff; }
+    #btn-pdf { background:#dc2626; color:#fff; }
 
-    /* Preview area */
-    #preview-area {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: var(--sp-lg);
-      padding: var(--sp-xl);
-      overflow: hidden;
-    }
-
-    #undo-toolbar {
-      display: flex;
-      gap: var(--sp-sm);
-      align-items: center;
-    }
-    .undo-btn {
-      width: 36px; height: 36px;
-      border: 1px solid var(--clr-border);
-      border-radius: var(--r-md);
-      background: white;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--clr-text);
-      transition: background .15s, border-color .15s;
-      font-size: 16px;
-    }
-    .undo-btn:hover:not(:disabled) { background: var(--clr-accent-l); border-color: var(--clr-accent); }
-    .undo-btn:disabled { opacity: .35; cursor: default; }
-    #toolbar-label {
-      font-size: 12px;
-      color: var(--clr-muted);
-    }
-
-    #qr-preview-wrap {
-      background: white;
-      border-radius: var(--r-xl);
-      box-shadow: var(--shadow-md);
-      padding: var(--sp-lg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #qr-preview { display: block; }
-    #qr-preview canvas, #qr-preview svg { border-radius: var(--r-sm); }
-
-    #preview-meta {
-      display: flex;
-      gap: var(--sp-md);
-      font-size: 12px;
-      color: var(--clr-muted);
-    }
-    #preview-meta span {
-      background: white;
-      border: 1px solid var(--clr-border);
-      border-radius: var(--r-full);
-      padding: 3px 10px;
-    }
+    /* ─── Preview area ──────────────────────────────────────────── */
+    #preview-area { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--sp-lg); padding:var(--sp-xl); overflow:hidden; }
+    #undo-toolbar { display:flex; gap:var(--sp-sm); align-items:center; }
+    .undo-btn { width:36px; height:36px; border:1px solid var(--clr-border); border-radius:var(--r-md); background:white; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--clr-text); transition:background .15s,border-color .15s; }
+    .undo-btn:hover:not(:disabled) { background:var(--clr-accent-l); border-color:var(--clr-accent); }
+    .undo-btn:disabled { opacity:.35; cursor:default; }
+    #toolbar-label { font-size:12px; color:var(--clr-muted); }
+    #qr-preview-wrap { background:white; border-radius:var(--r-xl); box-shadow:var(--shadow-md); padding:var(--sp-lg); display:flex; align-items:center; justify-content:center; }
+    #qr-preview { display:block; }
+    #qr-preview canvas,#qr-preview svg { border-radius:var(--r-sm); }
+    #preview-meta { display:flex; gap:var(--sp-md); font-size:12px; color:var(--clr-muted); }
+    #preview-meta span { background:white; border:1px solid var(--clr-border); border-radius:var(--r-full); padding:3px 10px; }
 
     /* ─── Accordion ───────────────────────────────────────────── */
-    .acc-section {
-      border-bottom: 1px solid var(--clr-border);
-    }
-    .acc-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px var(--sp-md);
-      cursor: pointer;
-      user-select: none;
-      background: var(--clr-sidebar);
-      transition: background .1s;
-    }
-    .acc-header:hover { background: var(--clr-panel); }
-    .acc-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--clr-text);
-      display: flex;
-      align-items: center;
-      gap: var(--sp-sm);
-    }
-    .acc-title-icon { font-size: 15px; }
-    .acc-arrow {
-      font-size: 11px;
-      color: var(--clr-muted);
-      transition: transform .2s;
-    }
-    .acc-section.collapsed .acc-arrow { transform: rotate(-90deg); }
-    .acc-body {
-      padding: 4px var(--sp-md) var(--sp-md);
-      background: var(--clr-panel);
-      overflow: hidden;
-    }
-    .acc-section.collapsed .acc-body { display: none; }
+    .acc-section { border-bottom:1px solid var(--clr-border); }
+    .acc-header { display:flex; align-items:center; justify-content:space-between; padding:12px var(--sp-md); cursor:pointer; user-select:none; background:var(--clr-sidebar); transition:background .1s; }
+    .acc-header:hover { background:var(--clr-panel); }
+    .acc-title { font-size:13px; font-weight:600; color:var(--clr-text); display:flex; align-items:center; gap:var(--sp-sm); }
+    .acc-title-icon { font-size:15px; }
+    .acc-arrow { font-size:11px; color:var(--clr-muted); transition:transform .2s; }
+    .acc-section.collapsed .acc-arrow { transform:rotate(-90deg); }
+    .acc-body { padding:4px var(--sp-md) var(--sp-md); background:var(--clr-panel); }
+    .acc-section.collapsed .acc-body { display:none; }
 
-    /* ─── Field rows ──────────────────────────────────────────── */
-    .field-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--sp-sm);
-      margin-bottom: 10px;
-    }
-    .field-row:last-child { margin-bottom: 0; }
-    .field-label {
-      font-size: 12px;
-      color: var(--clr-muted);
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .field-full {
-      display: flex;
-      flex-direction: column;
-      gap: var(--sp-xs);
-      margin-bottom: 10px;
-    }
-    .field-full .field-label { margin-bottom: 2px; }
+    /* ─── Fields ──────────────────────────────────────────────── */
+    .field-row { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-sm); margin-bottom:10px; }
+    .field-row:last-child { margin-bottom:0; }
+    .field-label { font-size:12px; color:var(--clr-muted); white-space:nowrap; flex-shrink:0; }
+    .field-full { display:flex; flex-direction:column; gap:var(--sp-xs); margin-bottom:10px; }
 
-    /* Textarea */
-    #qr-text {
-      width: 100%;
-      height: 72px;
-      padding: var(--sp-sm);
-      border: 1px solid var(--clr-border);
-      border-radius: var(--r-md);
-      font-size: 13px;
-      font-family: var(--mono);
-      resize: vertical;
-      outline: none;
-      color: var(--clr-text);
-      background: white;
-      transition: border-color .15s;
-    }
-    #qr-text:focus { border-color: var(--clr-accent); }
+    #qr-text { width:100%; height:68px; padding:var(--sp-sm); border:1px solid var(--clr-border); border-radius:var(--r-md); font-size:13px; font-family:var(--mono); resize:vertical; outline:none; color:var(--clr-text); background:white; transition:border-color .15s; }
+    #qr-text:focus { border-color:var(--clr-accent); }
 
-    /* Segmented control */
-    .segmented {
-      display: flex;
-      border: 1px solid var(--clr-border);
-      border-radius: var(--r-md);
-      overflow: hidden;
-      background: white;
-    }
-    .segmented button {
-      flex: 1;
-      padding: 6px 4px;
-      font-size: 12px;
-      font-weight: 500;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      color: var(--clr-muted);
-      transition: background .12s, color .12s;
-    }
-    .segmented button.active {
-      background: var(--clr-accent);
-      color: white;
-    }
+    /* Segmented */
+    .segmented { display:flex; border:1px solid var(--clr-border); border-radius:var(--r-md); overflow:hidden; background:white; }
+    .segmented button { flex:1; padding:6px 4px; font-size:12px; font-weight:500; border:none; background:transparent; cursor:pointer; color:var(--clr-muted); transition:background .12s,color .12s; }
+    .segmented button.active { background:var(--clr-accent); color:white; }
 
-    /* Range slider */
-    input[type=range] {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 100%;
-      height: 4px;
-      background: var(--clr-border);
-      border-radius: 2px;
-      outline: none;
-      cursor: pointer;
-    }
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px; height: 16px;
-      background: var(--clr-accent);
-      border-radius: 50%;
-      cursor: pointer;
-    }
-    input[type=range]::-moz-range-thumb {
-      width: 16px; height: 16px;
-      background: var(--clr-accent);
-      border-radius: 50%;
-      border: none;
-      cursor: pointer;
-    }
-    .slider-row {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-bottom: 10px;
-    }
-    .slider-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .slider-header .field-label { margin: 0; }
-    .slider-val {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--clr-accent);
-      font-family: var(--mono);
-      min-width: 32px;
-      text-align: right;
-    }
+    /* Slider */
+    input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:4px; background:var(--clr-border); border-radius:2px; outline:none; cursor:pointer; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:16px; background:var(--clr-accent); border-radius:50%; cursor:pointer; }
+    input[type=range]::-moz-range-thumb { width:16px; height:16px; background:var(--clr-accent); border-radius:50%; border:none; cursor:pointer; }
+    .slider-row { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
+    .slider-row:last-child { margin-bottom:0; }
+    .slider-header { display:flex; justify-content:space-between; align-items:center; }
+    .slider-val { font-size:12px; font-weight:600; color:var(--clr-accent); font-family:var(--mono); min-width:32px; text-align:right; }
 
     /* Color pair */
-    .color-row {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-xs);
+    .color-row { display:flex; align-items:center; gap:var(--sp-xs); }
+    input[type=color] { width:34px; height:28px; border:1px solid var(--clr-border); border-radius:var(--r-sm); cursor:pointer; padding:2px; background:white; }
+    .hex-input { font-family:var(--mono); font-size:12px; width:80px; padding:5px var(--sp-sm); border:1px solid var(--clr-border); border-radius:var(--r-sm); outline:none; color:var(--clr-text); background:white; transition:border-color .15s; }
+    .hex-input:focus { border-color:var(--clr-accent); }
+
+    /* ─── Colour mode tabs (Solid / Gradient) ─────────────────── */
+    .color-mode-tabs {
+      display:flex; gap:3px; margin-bottom:10px;
+      background:var(--clr-border); padding:3px; border-radius:var(--r-md);
     }
-    input[type=color] {
-      width: 34px;
-      height: 28px;
-      border: 1px solid var(--clr-border);
-      border-radius: var(--r-sm);
-      cursor: pointer;
-      padding: 2px;
-      background: white;
+    .color-mode-tab {
+      flex:1; padding:5px 0; font-size:11px; font-weight:600;
+      border:none; border-radius:calc(var(--r-md) - 2px); cursor:pointer;
+      background:transparent; color:var(--clr-muted); transition:background .12s,color .12s;
     }
-    .hex-input {
-      font-family: var(--mono);
-      font-size: 12px;
-      width: 80px;
-      padding: 5px var(--sp-sm);
-      border: 1px solid var(--clr-border);
-      border-radius: var(--r-sm);
-      outline: none;
-      color: var(--clr-text);
-      background: white;
-      transition: border-color .15s;
+    .color-mode-tab.active { background:white; color:var(--clr-text); box-shadow:0 1px 3px rgba(0,0,0,.08); }
+
+    /* ─── Background mode tabs (3-way) ────────────────────────── */
+    .bg-mode-tabs {
+      display:flex; gap:3px; margin-bottom:10px;
+      background:var(--clr-border); padding:3px; border-radius:var(--r-md);
     }
-    .hex-input:focus { border-color: var(--clr-accent); }
+    .bg-mode-tab {
+      flex:1; padding:5px 0; font-size:11px; font-weight:600;
+      border:none; border-radius:calc(var(--r-md) - 2px); cursor:pointer;
+      background:transparent; color:var(--clr-muted); transition:background .12s,color .12s;
+    }
+    .bg-mode-tab.active { background:white; color:var(--clr-text); box-shadow:0 1px 3px rgba(0,0,0,.08); }
+
+    /* Panels inside colour sections */
+    .color-panel { display:none; flex-direction:column; gap:10px; }
+    .color-panel.visible { display:flex; }
 
     /* Gradient controls */
-    .gradient-toggle-row {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-sm);
-      margin-bottom: 10px;
-    }
-    .gradient-toggle-row label {
-      font-size: 12px;
-      color: var(--clr-muted);
-      cursor: pointer;
-    }
-    input[type=checkbox] {
-      accent-color: var(--clr-accent);
-      width: 14px; height: 14px;
-      cursor: pointer;
-    }
-    .gradient-controls {
-      background: white;
-      border: 1px solid var(--clr-border);
-      border-radius: var(--r-md);
-      padding: var(--sp-sm);
-      margin-top: 6px;
-      display: none;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .gradient-controls.visible { display: flex; }
-    .gradient-controls .field-row { margin-bottom: 0; }
-    .gradient-type-select {
-      font-size: 12px;
-      padding: 5px var(--sp-sm);
-      border: 1px solid var(--clr-border);
-      border-radius: var(--r-sm);
-      background: white;
-      outline: none;
-      cursor: pointer;
-      color: var(--clr-text);
-    }
+    .gradient-type-select { font-size:12px; padding:5px var(--sp-sm); border:1px solid var(--clr-border); border-radius:var(--r-sm); background:white; outline:none; cursor:pointer; color:var(--clr-text); }
 
-    /* Type grid (dot/corner shape pickers) */
-    .type-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      margin-bottom: 10px;
-    }
-    .type-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      padding: 8px 4px 6px;
-      border: 2px solid var(--clr-border);
-      border-radius: var(--r-md);
-      background: white;
-      cursor: pointer;
-      transition: border-color .12s, background .12s;
-    }
-    .type-btn:hover { border-color: #93c5fd; }
-    .type-btn.active { border-color: var(--clr-accent); background: var(--clr-accent-l); }
-    .type-btn svg { display: block; }
-    .type-btn span {
-      font-size: 10px;
-      font-weight: 500;
-      color: var(--clr-muted);
-      text-align: center;
-      line-height: 1.2;
-    }
-    .type-btn.active span { color: var(--clr-accent); }
+    /* ─── Type grid (dot/corner shape pickers) ────────────────── */
+    .type-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:10px; }
+    .type-btn { display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 4px 6px; border:2px solid var(--clr-border); border-radius:var(--r-md); background:white; cursor:pointer; transition:border-color .12s,background .12s; color:var(--clr-muted); }
+    .type-btn:hover { border-color:#93c5fd; }
+    .type-btn.active { border-color:var(--clr-accent); background:var(--clr-accent-l); color:var(--clr-accent); }
+    .type-btn svg { display:block; }
+    .type-btn span { font-size:10px; font-weight:500; text-align:center; line-height:1.2; }
 
-    /* Icon grid */
-    .icon-section-header {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--clr-muted);
-      margin-bottom: 6px;
-    }
-    .icon-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-      margin-bottom: 10px;
-    }
+    /* ─── Template grid ───────────────────────────────────────── */
+    .tpl-category-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--clr-muted); margin:10px 0 6px; }
+    .tpl-category-label:first-child { margin-top:2px; }
+    .tpl-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:4px; }
+    .tpl-btn { display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 4px 6px; border:2px solid var(--clr-border); border-radius:var(--r-md); background:white; cursor:pointer; transition:border-color .12s,background .12s; }
+    .tpl-btn:hover { border-color:#93c5fd; }
+    .tpl-btn.active { border-color:var(--clr-accent); background:var(--clr-accent-l); }
+    .tpl-preview { width:52px; height:52px; border-radius:var(--r-sm); overflow:hidden; display:flex; align-items:center; justify-content:center; }
+    .tpl-preview canvas,.tpl-preview svg { width:52px!important; height:52px!important; }
+    .tpl-label { font-size:10px; font-weight:600; color:var(--clr-text); text-align:center; }
+    .tpl-btn.active .tpl-label { color:var(--clr-accent); }
+
+    /* ─── Icon grid ───────────────────────────────────────────── */
+    .section-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--clr-muted); margin-bottom:6px; }
+    .icon-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin-bottom:8px; }
     .icon-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      padding: 8px 4px 5px;
-      border: 2px solid var(--clr-border);
-      border-radius: var(--r-md);
-      background: white;
-      cursor: pointer;
-      transition: border-color .12s;
+      display:flex; flex-direction:column; align-items:center; gap:3px;
+      padding:7px 3px 5px; border:2px solid var(--clr-border);
+      border-radius:var(--r-md); background:white; cursor:pointer; transition:border-color .12s,background .12s;
     }
-    .icon-btn:hover { border-color: #93c5fd; }
-    .icon-btn.active { border-color: var(--clr-accent); background: var(--clr-accent-l); }
-    .icon-btn span {
-      font-size: 9px;
-      color: var(--clr-muted);
-      text-align: center;
-    }
-    .icon-btn.active span { color: var(--clr-accent); }
-    .icon-none-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px var(--sp-sm);
-      border: 1px solid var(--clr-border);
-      border-radius: var(--r-md);
-      background: white;
-      cursor: pointer;
-      font-size: 12px;
-      color: var(--clr-muted);
-      margin-bottom: 8px;
-      width: 100%;
-      transition: background .12s;
-    }
-    .icon-none-btn:hover { background: var(--clr-panel); }
+    .icon-btn:hover { border-color:#93c5fd; }
+    .icon-btn.active { border-color:var(--clr-accent); background:var(--clr-accent-l); }
+    .icon-btn svg { display:block; }
+    .icon-btn span { font-size:9px; color:var(--clr-muted); text-align:center; font-weight:500; }
+    .icon-btn.active span { color:var(--clr-accent); }
 
-    /* Upload button */
-    .upload-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      width: 100%;
-      padding: 8px;
-      border: 2px dashed var(--clr-border);
-      border-radius: var(--r-md);
-      background: white;
-      cursor: pointer;
-      font-size: 12px;
-      color: var(--clr-muted);
-      margin-bottom: 8px;
-      transition: border-color .12s, color .12s;
-    }
-    .upload-btn:hover { border-color: var(--clr-accent); color: var(--clr-accent); }
+    .clear-btn { display:flex; align-items:center; justify-content:center; gap:5px; width:100%; padding:7px; border:1px solid var(--clr-border); border-radius:var(--r-md); background:white; cursor:pointer; font-size:12px; color:var(--clr-muted); margin-bottom:8px; transition:background .12s,color .12s; }
+    .clear-btn:hover { background:#fef2f2; color:#ef4444; border-color:#fca5a5; }
 
-    /* Template grid */
-    .template-category-label {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--clr-muted);
-      margin: 10px 0 6px;
-    }
-    .template-category-label:first-child { margin-top: 2px; }
-    .template-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      margin-bottom: 4px;
-    }
-    .tpl-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      padding: 8px 4px 6px;
-      border: 2px solid var(--clr-border);
-      border-radius: var(--r-md);
-      background: white;
-      cursor: pointer;
-      transition: border-color .12s, background .12s;
-    }
-    .tpl-btn:hover { border-color: #93c5fd; }
-    .tpl-btn.active { border-color: var(--clr-accent); background: var(--clr-accent-l); }
-    .tpl-preview {
-      width: 52px;
-      height: 52px;
-      border-radius: var(--r-sm);
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .tpl-preview svg, .tpl-preview canvas { width: 52px !important; height: 52px !important; }
-    .tpl-label {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--clr-text);
-      text-align: center;
-    }
-    .tpl-btn.active .tpl-label { color: var(--clr-accent); }
+    .upload-area { display:flex; align-items:center; justify-content:center; gap:6px; width:100%; padding:8px; border:2px dashed var(--clr-border); border-radius:var(--r-md); background:white; cursor:pointer; font-size:12px; color:var(--clr-muted); margin-bottom:6px; transition:border-color .12s,color .12s; }
+    .upload-area:hover { border-color:var(--clr-accent); color:var(--clr-accent); }
 
-    /* Divider */
-    .divider {
-      height: 1px;
-      background: var(--clr-border);
-      margin: var(--sp-sm) 0;
-    }
+    .divider { height:1px; background:var(--clr-border); margin:var(--sp-sm) 0; }
 
-    /* Warning badge */
-    #logo-warning {
-      display: none;
-      background: #fef3c7;
-      border: 1px solid #f59e0b;
-      border-radius: var(--r-sm);
-      padding: 6px 8px;
-      font-size: 11px;
-      color: #92400e;
-      margin-top: 6px;
-    }
-    #logo-warning.visible { display: block; }
+    input[type=checkbox] { accent-color:var(--clr-accent); width:14px; height:14px; cursor:pointer; }
+    .check-row { display:flex; align-items:center; gap:var(--sp-sm); margin-bottom:8px; }
+    .check-row label { font-size:12px; color:var(--clr-muted); cursor:pointer; }
 
-    /* ─── Mobile ────────────────────────────────────────────── */
-    @media (max-width: 768px) {
-      #app { flex-direction: column; }
-      #sidebar {
-        width: 100%;
-        min-width: unset;
-        border-right: none;
-        border-bottom: 1px solid var(--clr-border);
-        max-height: 50vh;
-      }
-      #preview-area { flex: 1; padding: var(--sp-md); }
+    #logo-warning { display:none; background:#fef3c7; border:1px solid #f59e0b; border-radius:var(--r-sm); padding:6px 8px; font-size:11px; color:#92400e; margin-top:6px; }
+    #logo-warning.visible { display:block; }
+
+    @media (max-width:768px) {
+      #app { flex-direction:column; }
+      #sidebar { width:100%; min-width:unset; border-right:none; border-bottom:1px solid var(--clr-border); max-height:50vh; }
+      #preview-area { flex:1; padding:var(--sp-md); }
     }
   </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- ═══════════════ SIDEBAR ══════════════════════════════ -->
+  <!-- ═══════════════ SIDEBAR ═══════════════════════════════ -->
   <aside id="sidebar">
     <div id="sidebar-header">
       <h1>QR Generator</h1>
-      <p>Design, customise and export</p>
+      <p>Design, customise &amp; export</p>
     </div>
 
     <div id="sidebar-scroll">
@@ -619,7 +220,16 @@
         </div>
       </div>
 
-      <!-- 2. Dot Style -->
+      <!-- 2. Templates — FIRST after content -->
+      <div class="acc-section" id="sec-tpl">
+        <div class="acc-header" onclick="toggleAcc('sec-tpl')">
+          <span class="acc-title"><span class="acc-title-icon">✨</span>Templates</span>
+          <span class="acc-arrow">▾</span>
+        </div>
+        <div class="acc-body" id="template-body"><!-- filled by JS --></div>
+      </div>
+
+      <!-- 3. Dot Style -->
       <div class="acc-section collapsed" id="sec-dots">
         <div class="acc-header" onclick="toggleAcc('sec-dots')">
           <span class="acc-title"><span class="acc-title-icon">⬛</span>Dot Style</span>
@@ -627,18 +237,23 @@
         </div>
         <div class="acc-body">
           <div class="type-grid" id="dot-type-grid"></div>
-          <div class="field-row">
-            <span class="field-label">Colour</span>
-            <div class="color-row">
-              <input type="color" id="dot-color-picker" value="#000000">
-              <input type="text" class="hex-input" id="dot-color-hex" value="#000000" maxlength="7">
+          <!-- Solid / Gradient tabs -->
+          <div class="color-mode-tabs">
+            <button class="color-mode-tab active" data-target="dot" data-mode="solid">Solid</button>
+            <button class="color-mode-tab" data-target="dot" data-mode="gradient">Gradient</button>
+          </div>
+          <!-- Solid panel -->
+          <div class="color-panel visible" id="dot-solid-panel">
+            <div class="field-row">
+              <span class="field-label">Colour</span>
+              <div class="color-row">
+                <input type="color" id="dot-color-picker" value="#000000">
+                <input type="text" class="hex-input" id="dot-color-hex" value="#000000" maxlength="7">
+              </div>
             </div>
           </div>
-          <div class="gradient-toggle-row">
-            <input type="checkbox" id="dot-grad-on">
-            <label for="dot-grad-on">Gradient fill</label>
-          </div>
-          <div class="gradient-controls" id="dot-grad-ctrl">
+          <!-- Gradient panel -->
+          <div class="color-panel" id="dot-gradient-panel">
             <div class="field-row">
               <span class="field-label">Type</span>
               <select class="gradient-type-select" id="dot-grad-type">
@@ -671,7 +286,7 @@
         </div>
       </div>
 
-      <!-- 3. Corner Squares -->
+      <!-- 4. Corner Squares -->
       <div class="acc-section collapsed" id="sec-csq">
         <div class="acc-header" onclick="toggleAcc('sec-csq')">
           <span class="acc-title"><span class="acc-title-icon">◼</span>Corner Squares</span>
@@ -679,18 +294,20 @@
         </div>
         <div class="acc-body">
           <div class="type-grid" id="csq-type-grid"></div>
-          <div class="field-row">
-            <span class="field-label">Colour</span>
-            <div class="color-row">
-              <input type="color" id="csq-color-picker" value="#000000">
-              <input type="text" class="hex-input" id="csq-color-hex" value="#000000" maxlength="7">
+          <div class="color-mode-tabs">
+            <button class="color-mode-tab active" data-target="csq" data-mode="solid">Solid</button>
+            <button class="color-mode-tab" data-target="csq" data-mode="gradient">Gradient</button>
+          </div>
+          <div class="color-panel visible" id="csq-solid-panel">
+            <div class="field-row">
+              <span class="field-label">Colour</span>
+              <div class="color-row">
+                <input type="color" id="csq-color-picker" value="#000000">
+                <input type="text" class="hex-input" id="csq-color-hex" value="#000000" maxlength="7">
+              </div>
             </div>
           </div>
-          <div class="gradient-toggle-row">
-            <input type="checkbox" id="csq-grad-on">
-            <label for="csq-grad-on">Gradient fill</label>
-          </div>
-          <div class="gradient-controls" id="csq-grad-ctrl">
+          <div class="color-panel" id="csq-gradient-panel">
             <div class="field-row">
               <span class="field-label">Type</span>
               <select class="gradient-type-select" id="csq-grad-type">
@@ -716,7 +333,7 @@
         </div>
       </div>
 
-      <!-- 4. Corner Dots -->
+      <!-- 5. Corner Dots -->
       <div class="acc-section collapsed" id="sec-cdot">
         <div class="acc-header" onclick="toggleAcc('sec-cdot')">
           <span class="acc-title"><span class="acc-title-icon">●</span>Corner Dots</span>
@@ -724,18 +341,20 @@
         </div>
         <div class="acc-body">
           <div class="type-grid" id="cdot-type-grid"></div>
-          <div class="field-row">
-            <span class="field-label">Colour</span>
-            <div class="color-row">
-              <input type="color" id="cdot-color-picker" value="#000000">
-              <input type="text" class="hex-input" id="cdot-color-hex" value="#000000" maxlength="7">
+          <div class="color-mode-tabs">
+            <button class="color-mode-tab active" data-target="cdot" data-mode="solid">Solid</button>
+            <button class="color-mode-tab" data-target="cdot" data-mode="gradient">Gradient</button>
+          </div>
+          <div class="color-panel visible" id="cdot-solid-panel">
+            <div class="field-row">
+              <span class="field-label">Colour</span>
+              <div class="color-row">
+                <input type="color" id="cdot-color-picker" value="#000000">
+                <input type="text" class="hex-input" id="cdot-color-hex" value="#000000" maxlength="7">
+              </div>
             </div>
           </div>
-          <div class="gradient-toggle-row">
-            <input type="checkbox" id="cdot-grad-on">
-            <label for="cdot-grad-on">Gradient fill</label>
-          </div>
-          <div class="gradient-controls" id="cdot-grad-ctrl">
+          <div class="color-panel" id="cdot-gradient-panel">
             <div class="field-row">
               <span class="field-label">Type</span>
               <select class="gradient-type-select" id="cdot-grad-type">
@@ -761,25 +380,31 @@
         </div>
       </div>
 
-      <!-- 5. Background -->
+      <!-- 6. Background -->
       <div class="acc-section collapsed" id="sec-bg">
         <div class="acc-header" onclick="toggleAcc('sec-bg')">
           <span class="acc-title"><span class="acc-title-icon">🎨</span>Background</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
-          <div class="field-row">
-            <span class="field-label">Colour</span>
-            <div class="color-row">
-              <input type="color" id="bg-color-picker" value="#ffffff">
-              <input type="text" class="hex-input" id="bg-color-hex" value="#ffffff" maxlength="7">
+          <!-- 3-way tab: Transparent / Solid / Gradient -->
+          <div class="bg-mode-tabs">
+            <button class="bg-mode-tab" data-bg="transparent">Transparent</button>
+            <button class="bg-mode-tab active" data-bg="solid">Solid</button>
+            <button class="bg-mode-tab" data-bg="gradient">Gradient</button>
+          </div>
+          <!-- Solid panel -->
+          <div class="color-panel visible" id="bg-solid-panel">
+            <div class="field-row">
+              <span class="field-label">Colour</span>
+              <div class="color-row">
+                <input type="color" id="bg-color-picker" value="#ffffff">
+                <input type="text" class="hex-input" id="bg-color-hex" value="#ffffff" maxlength="7">
+              </div>
             </div>
           </div>
-          <div class="gradient-toggle-row">
-            <input type="checkbox" id="bg-grad-on">
-            <label for="bg-grad-on">Gradient background</label>
-          </div>
-          <div class="gradient-controls" id="bg-grad-ctrl">
+          <!-- Gradient panel -->
+          <div class="color-panel" id="bg-gradient-panel">
             <div class="field-row">
               <span class="field-label">Type</span>
               <select class="gradient-type-select" id="bg-grad-type">
@@ -802,54 +427,51 @@
               </div>
             </div>
           </div>
-          <div class="gradient-toggle-row" style="margin-top:6px">
-            <input type="checkbox" id="bg-transparent">
-            <label for="bg-transparent">Transparent background</label>
+          <!-- Transparent panel (informational) -->
+          <div class="color-panel" id="bg-transparent-panel">
+            <p style="font-size:11px;color:var(--clr-muted);padding:4px 0">Background will be transparent — PNG and SVG will have no fill.</p>
           </div>
         </div>
       </div>
 
-      <!-- 6. Logo / Image -->
+      <!-- 7. Logo / Image -->
       <div class="acc-section collapsed" id="sec-logo">
         <div class="acc-header" onclick="toggleAcc('sec-logo')">
           <span class="acc-title"><span class="acc-title-icon">🖼️</span>Logo / Image</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
-          <p class="icon-section-header">Built-in Icons</p>
+          <p class="section-label">Built-in Icons</p>
           <div class="icon-grid" id="icon-grid"></div>
-          <button class="icon-none-btn" id="icon-clear-btn">✕ Remove image</button>
+          <button class="clear-btn" id="icon-clear-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Remove image
+          </button>
           <div class="divider"></div>
-          <p class="icon-section-header">Upload your own</p>
-          <div class="upload-btn" id="logo-upload-area" onclick="document.getElementById('logo-file-input').click()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p class="section-label">Upload your own</p>
+          <div class="upload-area" onclick="document.getElementById('logo-file-input').click()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Upload image
           </div>
           <input type="file" id="logo-file-input" accept="image/*" style="display:none">
           <div class="divider"></div>
           <div class="slider-row">
-            <div class="slider-header">
-              <span class="field-label">Logo size</span>
-              <span class="slider-val" id="logo-size-val">40%</span>
-            </div>
+            <div class="slider-header"><span class="field-label">Logo size</span><span class="slider-val" id="logo-size-val">40%</span></div>
             <input type="range" id="logo-size" min="10" max="60" value="40">
           </div>
           <div class="slider-row">
-            <div class="slider-header">
-              <span class="field-label">Logo margin</span>
-              <span class="slider-val" id="logo-margin-val">4</span>
-            </div>
+            <div class="slider-header"><span class="field-label">Logo margin</span><span class="slider-val" id="logo-margin-val">4</span></div>
             <input type="range" id="logo-margin" min="0" max="20" value="4">
           </div>
-          <div class="gradient-toggle-row">
+          <div class="check-row">
             <input type="checkbox" id="logo-hide-dots" checked>
-            <label for="logo-hide-dots">Hide background dots under logo</label>
+            <label for="logo-hide-dots">Hide dots under logo</label>
           </div>
           <div id="logo-warning">⚠ Logo is large — use Error Correction H for reliable scanning.</div>
         </div>
       </div>
 
-      <!-- 7. Border & Margin -->
+      <!-- 8. Border & Margin -->
       <div class="acc-section collapsed" id="sec-margin">
         <div class="acc-header" onclick="toggleAcc('sec-margin')">
           <span class="acc-title"><span class="acc-title-icon">⬜</span>Border &amp; Margin</span>
@@ -857,16 +479,13 @@
         </div>
         <div class="acc-body">
           <div class="slider-row">
-            <div class="slider-header">
-              <span class="field-label">Quiet zone (px)</span>
-              <span class="slider-val" id="margin-val">10</span>
-            </div>
+            <div class="slider-header"><span class="field-label">Quiet zone (px)</span><span class="slider-val" id="margin-val">10</span></div>
             <input type="range" id="qr-margin" min="0" max="50" value="10">
           </div>
         </div>
       </div>
 
-      <!-- 8. Error Correction -->
+      <!-- 9. Error Correction -->
       <div class="acc-section collapsed" id="sec-ec">
         <div class="acc-header" onclick="toggleAcc('sec-ec')">
           <span class="acc-title"><span class="acc-title-icon">🛡️</span>Error Correction</span>
@@ -886,17 +505,6 @@
         </div>
       </div>
 
-      <!-- 9. Templates -->
-      <div class="acc-section collapsed" id="sec-tpl">
-        <div class="acc-header" onclick="toggleAcc('sec-tpl')">
-          <span class="acc-title"><span class="acc-title-icon">✨</span>Templates</span>
-          <span class="acc-arrow">▾</span>
-        </div>
-        <div class="acc-body" id="template-body">
-          <!-- filled by JS -->
-        </div>
-      </div>
-
     </div><!-- /sidebar-scroll -->
 
     <!-- Download panel -->
@@ -909,227 +517,234 @@
           <option value="4096">4096 px</option>
         </select>
         <button class="dl-btn" id="btn-png" onclick="exportPNG()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          PNG
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PNG
         </button>
         <button class="dl-btn" id="btn-svg" onclick="exportSVG()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          SVG
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>SVG
         </button>
         <button class="dl-btn" id="btn-pdf" onclick="exportPDF()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          PDF
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PDF
         </button>
       </div>
     </div>
   </aside>
 
-  <!-- ═══════════════ PREVIEW AREA ═══════════════════════════ -->
+  <!-- ═══════════════ PREVIEW ════════════════════════════════ -->
   <main id="preview-area">
     <div id="undo-toolbar">
       <button class="undo-btn" id="btn-undo" onclick="undoState()" disabled title="Undo (Ctrl+Z)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M3 13C5.5 7 11 4 17 6.5 21 8.5 22 13 21 17"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M3 13C5.5 7 11 4 17 6.5 21 8.5 22 13 21 17"/></svg>
       </button>
       <button class="undo-btn" id="btn-redo" onclick="redoState()" disabled title="Redo (Ctrl+Y)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M21 13C18.5 7 13 4 7 6.5 3 8.5 2 13 3 17"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M21 13C18.5 7 13 4 7 6.5 3 8.5 2 13 3 17"/></svg>
       </button>
       <span id="toolbar-label">QR Preview</span>
     </div>
-
     <div id="qr-preview-wrap">
       <div id="qr-preview"></div>
     </div>
-
     <div id="preview-meta">
       <span id="meta-ec">EC: M</span>
-      <span id="meta-size">400 × 400</span>
+      <span id="meta-size">360 × 360</span>
     </div>
   </main>
-
 </div>
 
 <script>
 'use strict';
 
 /* ══════════════════════════════════════════════════════════
-   CONSTANTS
+   SHAPE PREVIEW ICONS
 ══════════════════════════════════════════════════════════ */
+const SVI = {
+  dotSquare:       `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" fill="currentColor"/><rect x="13" y="2" width="9" height="9" fill="currentColor"/><rect x="2" y="13" width="9" height="9" fill="currentColor"/><rect x="13" y="13" width="9" height="9" fill="currentColor"/></svg>`,
+  dotRounded:      `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="3" fill="currentColor"/><rect x="13" y="2" width="9" height="9" rx="3" fill="currentColor"/><rect x="2" y="13" width="9" height="9" rx="3" fill="currentColor"/><rect x="13" y="13" width="9" height="9" rx="3" fill="currentColor"/></svg>`,
+  dotDots:         `<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="6.5" cy="6.5" r="4.5" fill="currentColor"/><circle cx="17.5" cy="6.5" r="4.5" fill="currentColor"/><circle cx="6.5" cy="17.5" r="4.5" fill="currentColor"/><circle cx="17.5" cy="17.5" r="4.5" fill="currentColor"/></svg>`,
+  dotClassy:       `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" fill="currentColor"/><rect x="13" y="2" width="9" height="9" rx="4" fill="currentColor"/><rect x="2" y="13" width="9" height="9" rx="4" fill="currentColor"/><rect x="13" y="13" width="9" height="9" fill="currentColor"/></svg>`,
+  dotClassyR:      `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="2" fill="currentColor"/><rect x="13" y="2" width="9" height="9" rx="5" fill="currentColor"/><rect x="2" y="13" width="9" height="9" rx="5" fill="currentColor"/><rect x="13" y="13" width="9" height="9" rx="2" fill="currentColor"/></svg>`,
+  dotExtraR:       `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="4.5" fill="currentColor"/><rect x="13" y="2" width="9" height="9" rx="4.5" fill="currentColor"/><rect x="2" y="13" width="9" height="9" rx="4.5" fill="currentColor"/><rect x="13" y="13" width="9" height="9" rx="4.5" fill="currentColor"/></svg>`,
+  eyeSquare:       `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="0" fill="none" stroke="currentColor" stroke-width="3"/><rect x="7" y="7" width="10" height="10" fill="currentColor"/></svg>`,
+  eyeRounded:      `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="6" fill="none" stroke="currentColor" stroke-width="3"/><rect x="7" y="7" width="10" height="10" rx="3" fill="currentColor"/></svg>`,
+  eyeDot:          `<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="12" cy="12" r="5" fill="currentColor"/></svg>`,
+  innerSquare:     `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" fill="currentColor"/></svg>`,
+  innerDot:        `<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg>`,
+};
 
 const DOT_TYPES = [
-  { val: 'square',        label: 'Square',       icon: dotIcon_square() },
-  { val: 'rounded',       label: 'Rounded',      icon: dotIcon_rounded() },
-  { val: 'dots',          label: 'Dots',         icon: dotIcon_dots() },
-  { val: 'classy',        label: 'Classy',       icon: dotIcon_classy() },
-  { val: 'classy-rounded',label: 'Classy R.',    icon: dotIcon_classyRounded() },
-  { val: 'extra-rounded', label: 'Extra R.',     icon: dotIcon_extraRounded() },
+  { val:'square',         label:'Square',    icon:SVI.dotSquare },
+  { val:'rounded',        label:'Rounded',   icon:SVI.dotRounded },
+  { val:'dots',           label:'Dots',      icon:SVI.dotDots },
+  { val:'classy',         label:'Classy',    icon:SVI.dotClassy },
+  { val:'classy-rounded', label:'Classy R.', icon:SVI.dotClassyR },
+  { val:'extra-rounded',  label:'Extra R.',  icon:SVI.dotExtraR },
 ];
-
 const CSQ_TYPES = [
-  { val: 'square',       label: 'Square',      icon: eyeIcon_square() },
-  { val: 'extra-rounded',label: 'Rounded',     icon: eyeIcon_rounded() },
-  { val: 'dot',          label: 'Dot',         icon: eyeIcon_dot() },
+  { val:'square',        label:'Square',  icon:SVI.eyeSquare },
+  { val:'extra-rounded', label:'Rounded', icon:SVI.eyeRounded },
+  { val:'dot',           label:'Dot',     icon:SVI.eyeDot },
 ];
-
 const CDOT_TYPES = [
-  { val: 'square', label: 'Square', icon: dotInnerIcon_square() },
-  { val: 'dot',    label: 'Dot',    icon: dotInnerIcon_dot() },
+  { val:'square', label:'Square', icon:SVI.innerSquare },
+  { val:'dot',    label:'Dot',    icon:SVI.innerDot },
 ];
 
 /* ══════════════════════════════════════════════════════════
-   SHAPE PREVIEW ICONS (inline SVG strings)
+   SIMPLE ICONS (MIT licence — simpleicons.org)
+   Brand colours from the Simple Icons project
 ══════════════════════════════════════════════════════════ */
-
-function dotIcon_square() {
-  return `<svg width="24" height="24" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="0" fill="currentColor"/><rect x="13" y="3" width="8" height="8" rx="0" fill="currentColor"/><rect x="3" y="13" width="8" height="8" rx="0" fill="currentColor"/><rect x="13" y="13" width="8" height="8" rx="0" fill="currentColor"/></svg>`;
+function makeIcon(color, path, viewBox) {
+  viewBox = viewBox || '0 0 24 24';
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="26" height="26" fill="${color}"><path d="${path}"/></svg>`;
 }
-function dotIcon_rounded() {
-  return `<svg width="24" height="24" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="3" fill="currentColor"/><rect x="13" y="3" width="8" height="8" rx="3" fill="currentColor"/><rect x="3" y="13" width="8" height="8" rx="3" fill="currentColor"/><rect x="13" y="13" width="8" height="8" rx="3" fill="currentColor"/></svg>`;
-}
-function dotIcon_dots() {
-  return `<svg width="24" height="24" viewBox="0 0 24 24"><circle cx="7" cy="7" r="4" fill="currentColor"/><circle cx="17" cy="7" r="4" fill="currentColor"/><circle cx="7" cy="17" r="4" fill="currentColor"/><circle cx="17" cy="17" r="4" fill="currentColor"/></svg>`;
-}
-function dotIcon_classy() {
-  return `<svg width="24" height="24" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="0" fill="currentColor"/><rect x="13" y="3" width="8" height="8" rx="3" fill="currentColor"/><rect x="3" y="13" width="8" height="8" rx="3" fill="currentColor"/><rect x="13" y="13" width="8" height="8" rx="0" fill="currentColor"/></svg>`;
-}
-function dotIcon_classyRounded() {
-  return `<svg width="24" height="24" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2" fill="currentColor"/><rect x="13" y="3" width="8" height="8" rx="4" fill="currentColor"/><rect x="3" y="13" width="8" height="8" rx="4" fill="currentColor"/><rect x="13" y="13" width="8" height="8" rx="2" fill="currentColor"/></svg>`;
-}
-function dotIcon_extraRounded() {
-  return `<svg width="24" height="24" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="4" fill="currentColor"/><rect x="13" y="3" width="8" height="8" rx="4" fill="currentColor"/><rect x="3" y="13" width="8" height="8" rx="4" fill="currentColor"/><rect x="13" y="13" width="8" height="8" rx="4" fill="currentColor"/></svg>`;
-}
-function eyeIcon_square() {
-  return `<svg width="24" height="24" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="0" fill="none" stroke="currentColor" stroke-width="3"/><rect x="8" y="8" width="8" height="8" rx="0" fill="currentColor"/></svg>`;
-}
-function eyeIcon_rounded() {
-  return `<svg width="24" height="24" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="3"/><rect x="8" y="8" width="8" height="8" rx="2" fill="currentColor"/></svg>`;
-}
-function eyeIcon_dot() {
-  return `<svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>`;
-}
-function dotInnerIcon_square() {
-  return `<svg width="24" height="24" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="0" fill="currentColor"/></svg>`;
-}
-function dotInnerIcon_dot() {
-  return `<svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="currentColor"/></svg>`;
-}
-
-/* ══════════════════════════════════════════════════════════
-   BUILT-IN ICONS (data URIs)
-══════════════════════════════════════════════════════════ */
 
 const ICONS = [
-  { id: 'facebook',  label: 'Facebook',  svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32"><path fill="#1877f2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>` },
-  { id: 'instagram', label: 'Instagram', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32"><defs><linearGradient id="ig" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><rect width="24" height="24" rx="6" fill="url(#ig)"/><path fill="white" d="M12 7.5A4.5 4.5 0 1 0 12 16.5 4.5 4.5 0 0 0 12 7.5Zm0 7.5A3 3 0 1 1 12 9a3 3 0 0 1 0 6Zm4.688-8.438a1.125 1.125 0 1 1-2.25 0 1.125 1.125 0 0 1 2.25 0Z"/></svg>` },
-  { id: 'linkedin',  label: 'LinkedIn',  svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32"><rect width="24" height="24" rx="4" fill="#0077b5"/><path fill="white" d="M6.5 8.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm-1.5 1.5h3v9h-3V10Zm5 0h2.9v1.3h.04c.4-.76 1.38-1.56 2.84-1.56 3.04 0 3.6 2 3.6 4.6V19h-3v-4.1c0-1-.02-2.28-1.39-2.28-1.39 0-1.6 1.08-1.6 2.2V19h-3V10Z"/></svg>` },
-  { id: 'twitter',   label: 'X/Twitter', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32"><rect width="24" height="24" rx="4" fill="#000"/><path fill="white" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.731-8.843-8.162-10.657h6.054l4.26 5.633 5.62-6.633Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>` },
-  { id: 'youtube',   label: 'YouTube',   svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32"><rect width="24" height="24" rx="4" fill="#ff0000"/><path fill="white" d="M19.6 8s-.2-1.3-.8-1.9c-.7-.8-1.5-.8-1.9-.8C14.8 5.2 12 5.2 12 5.2s-2.8 0-4.9.1c-.4.1-1.2.1-1.9.9C4.6 6.8 4.4 8 4.4 8S4.2 9.5 4.2 11v1.4c0 1.5.2 3 .2 3s.2 1.3.8 1.9c.7.8 1.7.7 2.1.8C8.6 18.2 12 18.2 12 18.2s2.8 0 4.9-.1c.4-.1 1.2-.1 1.9-.9.6-.6.8-1.9.8-1.9s.2-1.5.2-3V11c0-1.5-.2-3-.2-3Zm-8.9 6.1V9.9l5.1 2.1-5.1 2.1Z"/></svg>` },
-  { id: 'whatsapp',  label: 'WhatsApp',  svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32"><rect width="24" height="24" rx="4" fill="#25d366"/><path fill="white" d="M12 3.2A8.8 8.8 0 0 0 3.2 12c0 1.56.41 3.08 1.18 4.42L3.2 20.8l4.48-1.17A8.8 8.8 0 1 0 12 3.2Zm0 16a7.2 7.2 0 0 1-3.68-1.01l-.26-.16-2.66.7.71-2.59-.17-.27A7.2 7.2 0 1 1 12 19.2Zm3.94-5.35c-.22-.11-1.28-.63-1.48-.7-.2-.07-.35-.11-.5.11-.14.22-.56.7-.69.84-.13.14-.25.16-.47.05-.22-.11-.94-.35-1.79-1.1-.66-.59-1.1-1.32-1.23-1.54-.13-.22-.01-.34.1-.45.1-.1.22-.25.33-.38.11-.13.14-.22.22-.37.07-.14.04-.27-.02-.38s-.5-1.2-.68-1.65c-.18-.43-.36-.37-.5-.38h-.43c-.15 0-.38.06-.58.27-.2.22-.76.74-.76 1.8s.78 2.09.89 2.24c.11.14 1.54 2.35 3.73 3.29.52.22.93.35 1.25.45.52.16 1 .14 1.37.08.42-.06 1.28-.52 1.46-1.03.18-.5.18-.93.13-1.03-.05-.1-.19-.15-.41-.26Z"/></svg>` },
-  { id: 'tiktok',    label: 'TikTok',    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32"><rect width="24" height="24" rx="4" fill="#000"/><path fill="white" d="M19 7.4c-1.2-.1-2.3-.7-3-1.6v7c0 2.5-2 4.5-4.5 4.5S7 15.3 7 12.8s2-4.5 4.5-4.5c.3 0 .5 0 .8.1V11c-.3-.1-.5-.1-.8-.1-1.2 0-2.2 1-2.2 2.2s1 2.2 2.2 2.2 2.2-1 2.2-2.2V4h2.3c.3 1.8 1.7 3.2 3.5 3.3V7.4z"/></svg>` },
-  { id: 'globe',     label: 'Website',   svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32"><rect width="24" height="24" rx="4" fill="#2563eb"/><circle cx="12" cy="12" r="8" fill="none" stroke="white" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="3.5" ry="8" fill="none" stroke="white" stroke-width="1.5"/><line x1="4" y1="12" x2="20" y2="12" stroke="white" stroke-width="1.5"/></svg>` },
-  { id: 'email',     label: 'Email',     svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32"><rect width="24" height="24" rx="4" fill="#6b7280"/><rect x="4" y="7" width="16" height="11" rx="2" fill="none" stroke="white" stroke-width="1.5"/><polyline points="4,7 12,13 20,7" fill="none" stroke="white" stroke-width="1.5"/></svg>` },
-  { id: 'phone',     label: 'Phone',     svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32"><rect width="24" height="24" rx="4" fill="#16a34a"/><path fill="white" d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>` },
-  { id: 'pin',       label: 'Location',  svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32"><rect width="24" height="24" rx="4" fill="#ef4444"/><path fill="white" d="M12 3a7 7 0 0 0-7 7c0 4.5 7 12 7 12s7-7.5 7-12a7 7 0 0 0-7-7Zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/></svg>` },
-  { id: 'wifi',      label: 'WiFi',      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32"><rect width="24" height="24" rx="4" fill="#7c3aed"/><path fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" d="M4.9 9.5a10 10 0 0 1 14.2 0M7.4 12a6.5 6.5 0 0 1 9.2 0M9.9 14.5a3 3 0 0 1 4.2 0"/><circle cx="12" cy="18" r="1.2" fill="white"/></svg>` },
+  {
+    id:'facebook', label:'Facebook', color:'#1877F2',
+    svgEl: makeIcon('#1877F2', 'M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z')
+  },
+  {
+    id:'instagram', label:'Instagram', color:'#E4405F',
+    svgEl: makeIcon('#E4405F', 'M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077')
+  },
+  {
+    id:'linkedin', label:'LinkedIn', color:'#0A66C2',
+    svgEl: makeIcon('#0A66C2', 'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z')
+  },
+  {
+    id:'x', label:'X / Twitter', color:'#000000',
+    svgEl: makeIcon('#000000', 'M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z')
+  },
+  {
+    id:'youtube', label:'YouTube', color:'#FF0000',
+    svgEl: makeIcon('#FF0000', 'M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z')
+  },
+  {
+    id:'tiktok', label:'TikTok', color:'#000000',
+    svgEl: makeIcon('#000000', 'M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z')
+  },
+  {
+    id:'whatsapp', label:'WhatsApp', color:'#25D366',
+    svgEl: makeIcon('#25D366', 'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z')
+  },
+  {
+    id:'snapchat', label:'Snapchat', color:'#FFFC00',
+    svgEl: makeIcon('#FFBE00', 'M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301.165-.088.344-.104.464-.104.182 0 .359.029.509.09.45.149.734.479.734.838.015.449-.39.839-1.213 1.168-.089.029-.209.075-.344.119-.45.135-1.139.36-1.333.81-.09.224-.061.524.12.868l.015.015c.06.136 1.526 3.475 4.791 4.014.255.044.435.27.42.509 0 .075-.015.149-.045.225-.24.569-1.273.988-3.146 1.271-.059.091-.12.375-.164.57-.029.179-.074.36-.134.553-.076.271-.27.405-.555.405h-.03c-.135 0-.313-.031-.538-.074-.36-.075-.765-.135-1.273-.135-.3 0-.599.015-.913.074-.6.104-1.123.464-1.723.884-.853.599-1.826 1.288-3.294 1.288-.06 0-.119-.015-.18-.015h-.149c-1.468 0-2.427-.675-3.279-1.288-.599-.42-1.107-.779-1.707-.884-.314-.045-.629-.074-.928-.074-.54 0-.958.089-1.272.149-.211.043-.391.074-.54.074-.374 0-.523-.224-.583-.42-.061-.192-.09-.389-.135-.567-.046-.181-.105-.494-.166-.57-1.918-.222-2.95-.642-3.189-1.226-.031-.063-.052-.15-.055-.225-.015-.243.165-.465.42-.509 3.264-.54 4.73-3.879 4.791-4.02l.016-.029c.18-.345.224-.645.119-.869-.195-.434-.884-.658-1.332-.809-.121-.029-.24-.074-.346-.119-1.107-.435-1.257-.93-1.197-1.273.09-.479.674-.793 1.168-.793.146 0 .27.029.383.074.42.194.789.3 1.104.3.234 0 .384-.06.465-.105l-.046-.569c-.098-1.626-.225-3.651.307-4.837C7.392 1.077 10.739.807 11.727.807l.419-.015h.06z')
+  },
+  {
+    id:'globe', label:'Website', color:'#2563eb',
+    svgEl: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#2563eb" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><ellipse cx="12" cy="12" rx="4" ry="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>`
+  },
+  {
+    id:'email', label:'Email', color:'#6b7280',
+    svgEl: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#6b7280" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>`
+  },
+  {
+    id:'phone', label:'Phone', color:'#16a34a',
+    svgEl: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26" fill="#16a34a"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg>`
+  },
+  {
+    id:'location', label:'Location', color:'#ef4444',
+    svgEl: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26" fill="#ef4444"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>`
+  },
 ];
 
 /* ══════════════════════════════════════════════════════════
    TEMPLATES
 ══════════════════════════════════════════════════════════ */
-
 const TEMPLATES = {
   social: [
     {
-      id: 'instagram', label: 'Instagram',
-      opts: {
-        dotsOptions: { type: 'extra-rounded', gradient: { type:'linear', rotation: 0.785, colorStops: [{offset:0,color:'#f09433'},{offset:1,color:'#bc2a8d'}] } },
-        cornersSquareOptions: { type: 'extra-rounded', color: '#bc2a8d' },
-        cornersDotOptions: { type: 'dot', color: '#f09433' },
-        backgroundOptions: { color: '#ffffff' },
-        qrOptions: { errorCorrectionLevel: 'M' },
+      id:'instagram', label:'Instagram',
+      opts:{
+        dotsOptions:{ type:'extra-rounded', gradient:{ type:'linear', rotation:0.785, colorStops:[{offset:0,color:'#f09433'},{offset:1,color:'#bc2a8d'}] } },
+        cornersSquareOptions:{ type:'extra-rounded', color:'#bc2a8d' },
+        cornersDotOptions:{ type:'dot', color:'#f09433' },
+        backgroundOptions:{ color:'#ffffff' },
+        qrOptions:{ errorCorrectionLevel:'M' },
       }
     },
     {
-      id: 'linkedin', label: 'LinkedIn',
-      opts: {
-        dotsOptions: { type: 'square', color: '#0077b5' },
-        cornersSquareOptions: { type: 'square', color: '#0077b5' },
-        cornersDotOptions: { type: 'square', color: '#0077b5' },
-        backgroundOptions: { color: '#ffffff' },
-        qrOptions: { errorCorrectionLevel: 'M' },
+      id:'linkedin', label:'LinkedIn',
+      opts:{
+        dotsOptions:{ type:'square', color:'#0A66C2' },
+        cornersSquareOptions:{ type:'square', color:'#0A66C2' },
+        cornersDotOptions:{ type:'square', color:'#0A66C2' },
+        backgroundOptions:{ color:'#ffffff' },
+        qrOptions:{ errorCorrectionLevel:'M' },
       }
     },
     {
-      id: 'whatsapp', label: 'WhatsApp',
-      opts: {
-        dotsOptions: { type: 'dots', color: '#25d366' },
-        cornersSquareOptions: { type: 'extra-rounded', color: '#128c7e' },
-        cornersDotOptions: { type: 'dot', color: '#25d366' },
-        backgroundOptions: { color: '#ffffff' },
-        qrOptions: { errorCorrectionLevel: 'M' },
+      id:'whatsapp', label:'WhatsApp',
+      opts:{
+        dotsOptions:{ type:'dots', color:'#25D366' },
+        cornersSquareOptions:{ type:'extra-rounded', color:'#128c7e' },
+        cornersDotOptions:{ type:'dot', color:'#25D366' },
+        backgroundOptions:{ color:'#ffffff' },
+        qrOptions:{ errorCorrectionLevel:'M' },
       }
     },
   ],
   business: [
     {
-      id: 'corporate', label: 'Corporate',
-      opts: {
-        dotsOptions: { type: 'rounded', color: '#1a2b4a' },
-        cornersSquareOptions: { type: 'extra-rounded', color: '#1a2b4a' },
-        cornersDotOptions: { type: 'square', color: '#6b7c99' },
-        backgroundOptions: { color: '#f0f2f5' },
-        qrOptions: { errorCorrectionLevel: 'M' },
+      id:'corporate', label:'Corporate',
+      opts:{
+        dotsOptions:{ type:'rounded', color:'#1a2b4a' },
+        cornersSquareOptions:{ type:'extra-rounded', color:'#1a2b4a' },
+        cornersDotOptions:{ type:'square', color:'#6b7c99' },
+        backgroundOptions:{ color:'#f0f2f5' },
+        qrOptions:{ errorCorrectionLevel:'M' },
       }
     },
     {
-      id: 'minimal', label: 'Minimal',
-      opts: {
-        dotsOptions: { type: 'square', color: '#b0b0b0' },
-        cornersSquareOptions: { type: 'square', color: '#b0b0b0' },
-        cornersDotOptions: { type: 'square', color: '#b0b0b0' },
-        backgroundOptions: { color: '#ffffff' },
-        qrOptions: { errorCorrectionLevel: 'L' },
+      id:'minimal', label:'Minimal',
+      opts:{
+        dotsOptions:{ type:'square', color:'#b0b0b0' },
+        cornersSquareOptions:{ type:'square', color:'#b0b0b0' },
+        cornersDotOptions:{ type:'square', color:'#b0b0b0' },
+        backgroundOptions:{ color:'#ffffff' },
+        qrOptions:{ errorCorrectionLevel:'L' },
       }
     },
     {
-      id: 'bold', label: 'Bold',
-      opts: {
-        dotsOptions: { type: 'dots', color: '#000000' },
-        cornersSquareOptions: { type: 'dot', color: '#000000' },
-        cornersDotOptions: { type: 'dot', color: '#000000' },
-        backgroundOptions: { color: '#ffffff' },
-        qrOptions: { errorCorrectionLevel: 'H' },
+      id:'bold', label:'Bold',
+      opts:{
+        dotsOptions:{ type:'dots', color:'#000000' },
+        cornersSquareOptions:{ type:'dot', color:'#000000' },
+        cornersDotOptions:{ type:'dot', color:'#000000' },
+        backgroundOptions:{ color:'#ffffff' },
+        qrOptions:{ errorCorrectionLevel:'H' },
       }
     },
   ],
   event: [
     {
-      id: 'neon', label: 'Neon',
-      opts: {
-        dotsOptions: { type: 'square', color: '#00ff41' },
-        cornersSquareOptions: { type: 'square', color: '#00ff41' },
-        cornersDotOptions: { type: 'square', color: '#00ff41' },
-        backgroundOptions: { color: '#0a0a0a' },
-        qrOptions: { errorCorrectionLevel: 'M' },
+      id:'neon', label:'Neon',
+      opts:{
+        dotsOptions:{ type:'square', color:'#00ff41' },
+        cornersSquareOptions:{ type:'square', color:'#00ff41' },
+        cornersDotOptions:{ type:'square', color:'#00ff41' },
+        backgroundOptions:{ color:'#0a0a0a' },
+        qrOptions:{ errorCorrectionLevel:'M' },
       }
     },
     {
-      id: 'soft', label: 'Soft',
-      opts: {
-        dotsOptions: { type: 'dots', color: '#7c6f9c' },
-        cornersSquareOptions: { type: 'extra-rounded', color: '#c9a8e0' },
-        cornersDotOptions: { type: 'dot', color: '#7c6f9c' },
-        backgroundOptions: { color: '#fdf6ff' },
-        qrOptions: { errorCorrectionLevel: 'M' },
+      id:'soft', label:'Soft',
+      opts:{
+        dotsOptions:{ type:'dots', color:'#7c6f9c' },
+        cornersSquareOptions:{ type:'extra-rounded', color:'#c9a8e0' },
+        cornersDotOptions:{ type:'dot', color:'#7c6f9c' },
+        backgroundOptions:{ color:'#fdf6ff' },
+        qrOptions:{ errorCorrectionLevel:'M' },
       }
     },
     {
-      id: 'gradient', label: 'Gradient',
-      opts: {
-        dotsOptions: { type: 'rounded', gradient: { type:'linear', rotation: 0.785, colorStops: [{offset:0,color:'#0ea5e9'},{offset:1,color:'#8b5cf6'}] } },
-        cornersSquareOptions: { type: 'extra-rounded', color: '#0ea5e9' },
-        cornersDotOptions: { type: 'dot', color: '#8b5cf6' },
-        backgroundOptions: { color: '#ffffff' },
-        qrOptions: { errorCorrectionLevel: 'M' },
+      id:'gradient', label:'Gradient',
+      opts:{
+        dotsOptions:{ type:'rounded', gradient:{ type:'linear', rotation:0.785, colorStops:[{offset:0,color:'#0ea5e9'},{offset:1,color:'#8b5cf6'}] } },
+        cornersSquareOptions:{ type:'extra-rounded', color:'#0ea5e9' },
+        cornersDotOptions:{ type:'dot', color:'#8b5cf6' },
+        backgroundOptions:{ color:'#ffffff' },
+        qrOptions:{ errorCorrectionLevel:'M' },
       }
     },
   ],
@@ -1138,69 +753,60 @@ const TEMPLATES = {
 /* ══════════════════════════════════════════════════════════
    STATE
 ══════════════════════════════════════════════════════════ */
-
 const options = {
-  width: 360,
-  height: 360,
-  type: 'canvas',
-  data: 'https://example.com',
-  margin: 10,
-  qrOptions: { errorCorrectionLevel: 'M' },
-  imageOptions: { hideBackgroundDots: true, imageSize: 0.4, margin: 4 },
-  dotsOptions: { color: '#000000', type: 'square' },
-  cornersSquareOptions: { color: '#000000', type: 'square' },
-  cornersDotOptions: { color: '#000000', type: 'square' },
-  backgroundOptions: { color: '#ffffff' },
+  width:360, height:360, type:'canvas',
+  data:'https://example.com',
+  margin:10,
+  qrOptions:{ errorCorrectionLevel:'M' },
+  imageOptions:{ hideBackgroundDots:true, imageSize:0.4, margin:4 },
+  dotsOptions:{ color:'#000000', type:'square' },
+  cornersSquareOptions:{ color:'#000000', type:'square' },
+  cornersDotOptions:{ color:'#000000', type:'square' },
+  backgroundOptions:{ color:'#ffffff' },
 };
 
-// History
+// Track dot/corner colour modes: 'solid' or 'gradient'
+const colorModes = { dot:'solid', csq:'solid', cdot:'solid', bg:'solid' };
+
 const stateHistory = [];
 let historyIndex = -1;
 const MAX_HISTORY = 50;
-
-// Active template
 let activeTemplate = null;
 
 /* ══════════════════════════════════════════════════════════
-   SANITISE OPTIONS
+   DEEP CLONE + SANITISE
 ══════════════════════════════════════════════════════════ */
+function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
 
 function sanitiseOptions(opts) {
-  // qr-code-styling chokes on null gradient values — must omit them entirely
   const clean = deepClone(opts);
-  ['dotsOptions','cornersSquareOptions','cornersDotOptions','backgroundOptions'].forEach(key => {
-    if (clean[key] && clean[key].gradient === null) {
-      delete clean[key].gradient;
-    }
+  ['dotsOptions','cornersSquareOptions','cornersDotOptions','backgroundOptions'].forEach(k => {
+    if (clean[k] && clean[k].gradient === null) delete clean[k].gradient;
+    if (clean[k] && clean[k].gradient === undefined) delete clean[k].gradient;
   });
-  // Remove image key entirely when not set (null/undefined breaks some versions)
   if (!clean.image) delete clean.image;
   return clean;
 }
 
 /* ══════════════════════════════════════════════════════════
-   QR CODE INSTANCE
+   QR INSTANCE
 ══════════════════════════════════════════════════════════ */
-
 const qrCode = new QRCodeStyling(sanitiseOptions(options));
 qrCode.append(document.getElementById('qr-preview'));
 
 /* ══════════════════════════════════════════════════════════
    UPDATE ENGINE
 ══════════════════════════════════════════════════════════ */
-
-let _updateTimer = null;
-
+let _ut = null;
 function triggerUpdate(skipHistory) {
-  clearTimeout(_updateTimer);
-  _updateTimer = setTimeout(() => {
+  clearTimeout(_ut);
+  _ut = setTimeout(() => {
     qrCode.update(sanitiseOptions(options));
     if (!skipHistory) pushHistory();
-    updatePreviewMeta();
+    updateMeta();
   }, 120);
 }
-
-function updatePreviewMeta() {
+function updateMeta() {
   document.getElementById('meta-ec').textContent = 'EC: ' + options.qrOptions.errorCorrectionLevel;
   document.getElementById('meta-size').textContent = options.width + ' × ' + options.height;
 }
@@ -1208,205 +814,178 @@ function updatePreviewMeta() {
 /* ══════════════════════════════════════════════════════════
    HISTORY
 ══════════════════════════════════════════════════════════ */
-
 function pushHistory() {
   stateHistory.splice(historyIndex + 1);
   stateHistory.push(deepClone(options));
   if (stateHistory.length > MAX_HISTORY) stateHistory.shift();
   historyIndex = stateHistory.length - 1;
-  updateUndoRedoBtns();
+  updateUndoBtns();
 }
-
 function undoState() {
   if (historyIndex <= 0) return;
   historyIndex--;
   applySnapshot(stateHistory[historyIndex]);
 }
-
 function redoState() {
   if (historyIndex >= stateHistory.length - 1) return;
   historyIndex++;
   applySnapshot(stateHistory[historyIndex]);
 }
-
 function applySnapshot(snap) {
   Object.assign(options, deepClone(snap));
   syncUIFromState();
   qrCode.update(sanitiseOptions(options));
-  updatePreviewMeta();
-  updateUndoRedoBtns();
+  updateMeta();
+  updateUndoBtns();
 }
-
-function updateUndoRedoBtns() {
+function updateUndoBtns() {
   document.getElementById('btn-undo').disabled = historyIndex <= 0;
   document.getElementById('btn-redo').disabled = historyIndex >= stateHistory.length - 1;
-}
-
-function deepClone(obj) {
-  return JSON.parse(JSON.stringify(obj));
 }
 
 /* ══════════════════════════════════════════════════════════
    ACCORDION
 ══════════════════════════════════════════════════════════ */
-
-function toggleAcc(id) {
-  document.getElementById(id).classList.toggle('collapsed');
-}
+function toggleAcc(id) { document.getElementById(id).classList.toggle('collapsed'); }
 
 /* ══════════════════════════════════════════════════════════
    COLOUR PAIR BINDING
 ══════════════════════════════════════════════════════════ */
-
 function bindColorPair(pickerId, hexId, setter) {
-  const picker = document.getElementById(pickerId);
-  const hex    = document.getElementById(hexId);
-  picker.addEventListener('input', () => {
-    hex.value = picker.value.toUpperCase();
-    setter(picker.value);
-    triggerUpdate();
-  });
-  hex.addEventListener('input', () => {
-    if (/^#[0-9a-fA-F]{6}$/.test(hex.value)) {
-      picker.value = hex.value;
-      setter(hex.value);
-      triggerUpdate();
-    }
+  const p = document.getElementById(pickerId);
+  const h = document.getElementById(hexId);
+  p.addEventListener('input', () => { h.value = p.value.toUpperCase(); setter(p.value); triggerUpdate(); });
+  h.addEventListener('input', () => {
+    if (/^#[0-9a-fA-F]{6}$/.test(h.value)) { p.value = h.value; setter(h.value); triggerUpdate(); }
   });
 }
 
 /* ══════════════════════════════════════════════════════════
-   GRADIENT HELPERS
+   COLOUR MODE TABS (Solid / Gradient)
 ══════════════════════════════════════════════════════════ */
+function initColorModeTabs() {
+  document.querySelectorAll('.color-mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.target; // 'dot', 'csq', 'cdot'
+      const mode   = tab.dataset.mode;   // 'solid', 'gradient'
 
-function buildGradient(type, c1, c2, rotDeg) {
-  return {
-    type,
-    rotation: (rotDeg || 0) * Math.PI / 180,
-    colorStops: [
-      { offset: 0, color: c1 },
-      { offset: 1, color: c2 },
-    ],
-  };
+      // Update active tab within same group
+      tab.closest('.color-mode-tabs').querySelectorAll('.color-mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      // Show/hide panels
+      document.getElementById(`${target}-solid-panel`).classList.toggle('visible', mode === 'solid');
+      document.getElementById(`${target}-gradient-panel`).classList.toggle('visible', mode === 'gradient');
+
+      colorModes[target] = mode;
+
+      // Apply to options
+      if (mode === 'solid') {
+        // Remove gradient, keep solid colour
+        const color = document.getElementById(`${target}-color-picker`).value;
+        options[targetKey(target)].color = color;
+        delete options[targetKey(target)].gradient;
+      } else {
+        // Build gradient from current gradient inputs
+        rebuildGradient(target);
+      }
+      triggerUpdate();
+    });
+  });
 }
 
-function initGradientSection(prefix, optsTarget, colorKey) {
-  // prefix: 'dot', 'csq', 'cdot', 'bg'
-  const checkboxId = prefix + '-grad-on';
-  const ctrlId     = prefix + '-grad-ctrl';
-  const typeId     = prefix + '-grad-type';
-  const c1Id       = prefix + '-grad-c1';
-  const c1HexId    = prefix + '-grad-c1-hex';
-  const c2Id       = prefix + '-grad-c2';
-  const c2HexId    = prefix + '-grad-c2-hex';
-  const rotId      = prefix + '-grad-rot';
-  const rotValId   = prefix + '-grad-rot-val';
+function targetKey(t) {
+  return { dot:'dotsOptions', csq:'cornersSquareOptions', cdot:'cornersDotOptions' }[t];
+}
 
-  const checkbox = document.getElementById(checkboxId);
-  const ctrl     = document.getElementById(ctrlId);
+function rebuildGradient(target) {
+  const type  = document.getElementById(`${target}-grad-type`).value;
+  const c1    = document.getElementById(`${target}-grad-c1`).value;
+  const c2    = document.getElementById(`${target}-grad-c2`).value;
+  const rot   = target === 'dot' ? (parseInt(document.getElementById('dot-grad-rot').value) * Math.PI / 180) : 0;
+  options[targetKey(target)].gradient = { type, rotation:rot, colorStops:[{offset:0,color:c1},{offset:1,color:c2}] };
+}
 
-  if (!checkbox || !ctrl) return;
+/* ══════════════════════════════════════════════════════════
+   BACKGROUND MODE TABS (Transparent / Solid / Gradient)
+══════════════════════════════════════════════════════════ */
+function initBgModeTabs() {
+  document.querySelectorAll('.bg-mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const bg = tab.dataset.bg;
+      document.querySelectorAll('.bg-mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
 
-  function rebuild() {
-    const on   = checkbox.checked;
-    const type = document.getElementById(typeId) ? document.getElementById(typeId).value : 'linear';
-    const c1   = document.getElementById(c1Id) ? document.getElementById(c1Id).value : '#000000';
-    const c2   = document.getElementById(c2Id) ? document.getElementById(c2Id).value : '#2563eb';
-    const rot  = rotId && document.getElementById(rotId) ? parseInt(document.getElementById(rotId).value) : 0;
-    if (on) {
-      optsTarget.gradient = buildGradient(type, c1, c2, rot);
-    } else {
-      optsTarget.gradient = null;
-    }
-    triggerUpdate();
-  }
+      document.getElementById('bg-solid-panel').classList.toggle('visible', bg === 'solid');
+      document.getElementById('bg-gradient-panel').classList.toggle('visible', bg === 'gradient');
+      document.getElementById('bg-transparent-panel').classList.toggle('visible', bg === 'transparent');
 
-  checkbox.addEventListener('change', () => {
-    ctrl.classList.toggle('visible', checkbox.checked);
-    rebuild();
+      colorModes.bg = bg;
+
+      if (bg === 'transparent') {
+        options.backgroundOptions = { color:'rgba(0,0,0,0)' };
+      } else if (bg === 'solid') {
+        const color = document.getElementById('bg-color-picker').value;
+        options.backgroundOptions = { color };
+      } else {
+        const type = document.getElementById('bg-grad-type').value;
+        const c1   = document.getElementById('bg-grad-c1').value;
+        const c2   = document.getElementById('bg-grad-c2').value;
+        options.backgroundOptions = { gradient:{ type, rotation:0, colorStops:[{offset:0,color:c1},{offset:1,color:c2}] } };
+      }
+      triggerUpdate();
+    });
   });
-
-  if (document.getElementById(typeId)) {
-    document.getElementById(typeId).addEventListener('change', rebuild);
-  }
-
-  // c1 colour pair
-  if (document.getElementById(c1Id) && document.getElementById(c1HexId)) {
-    const c1Picker = document.getElementById(c1Id);
-    const c1Hex    = document.getElementById(c1HexId);
-    c1Picker.addEventListener('input', () => { c1Hex.value = c1Picker.value.toUpperCase(); rebuild(); });
-    c1Hex.addEventListener('input', () => {
-      if (/^#[0-9a-fA-F]{6}$/.test(c1Hex.value)) { c1Picker.value = c1Hex.value; rebuild(); }
-    });
-  }
-
-  // c2 colour pair
-  if (document.getElementById(c2Id) && document.getElementById(c2HexId)) {
-    const c2Picker = document.getElementById(c2Id);
-    const c2Hex    = document.getElementById(c2HexId);
-    c2Picker.addEventListener('input', () => { c2Hex.value = c2Picker.value.toUpperCase(); rebuild(); });
-    c2Hex.addEventListener('input', () => {
-      if (/^#[0-9a-fA-F]{6}$/.test(c2Hex.value)) { c2Picker.value = c2Hex.value; rebuild(); }
-    });
-  }
-
-  if (rotId && document.getElementById(rotId) && document.getElementById(rotValId)) {
-    document.getElementById(rotId).addEventListener('input', () => {
-      document.getElementById(rotValId).textContent = document.getElementById(rotId).value + '°';
-      rebuild();
-    });
-  }
 }
 
 /* ══════════════════════════════════════════════════════════
    TYPE GRIDS
 ══════════════════════════════════════════════════════════ */
-
 function buildTypeGrid(containerId, types, getter, setter) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = '';
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
   types.forEach(t => {
     const btn = document.createElement('button');
     btn.className = 'type-btn' + (getter() === t.val ? ' active' : '');
     btn.innerHTML = t.icon + `<span>${t.label}</span>`;
     btn.addEventListener('click', () => {
       setter(t.val);
-      container.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+      c.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       activeTemplate = null;
       document.querySelectorAll('.tpl-btn').forEach(b => b.classList.remove('active'));
       triggerUpdate();
     });
-    container.appendChild(btn);
+    c.appendChild(btn);
   });
 }
 
 /* ══════════════════════════════════════════════════════════
-   ICON GRID
+   ICON GRID (Simple Icons — proper brand SVGs)
 ══════════════════════════════════════════════════════════ */
-
 function buildIconGrid() {
-  const container = document.getElementById('icon-grid');
-  container.innerHTML = '';
+  const grid = document.getElementById('icon-grid');
+  grid.innerHTML = '';
+
   ICONS.forEach(icon => {
-    const svgDataURL = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(icon.svg);
+    const dataURL = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(icon.svgEl);
     const btn = document.createElement('button');
     btn.className = 'icon-btn';
     btn.dataset.id = icon.id;
-    btn.innerHTML = icon.svg.replace('width="32" height="32"', 'width="28" height="28"') + `<span>${icon.label}</span>`;
+    btn.innerHTML = icon.svgEl + `<span>${icon.label}</span>`;
     btn.addEventListener('click', () => {
       document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      options.image = svgDataURL;
+      options.image = dataURL;
       checkLogoWarning();
       triggerUpdate();
     });
-    container.appendChild(btn);
+    grid.appendChild(btn);
   });
 
   document.getElementById('icon-clear-btn').addEventListener('click', () => {
     document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
-    options.image = null;
+    options.image = undefined;
     document.getElementById('logo-warning').classList.remove('visible');
     triggerUpdate();
   });
@@ -1414,60 +993,46 @@ function buildIconGrid() {
 
 function checkLogoWarning() {
   const size = options.imageOptions.imageSize;
-  const ec   = options.qrOptions.errorCorrectionLevel;
-  const thresholds = { L: 0.07, M: 0.15, Q: 0.25, H: 0.30 };
-  const safe = thresholds[ec] * 0.8;
-  const warn = (size * size) > safe;
-  document.getElementById('logo-warning').classList.toggle('visible', warn && !!options.image);
+  const ec = options.qrOptions.errorCorrectionLevel;
+  const cap = { L:.07, M:.15, Q:.25, H:.30 };
+  const warn = options.image && (size * size) > (cap[ec] * 0.8);
+  document.getElementById('logo-warning').classList.toggle('visible', !!warn);
 }
 
 /* ══════════════════════════════════════════════════════════
    TEMPLATE GRID
 ══════════════════════════════════════════════════════════ */
-
 function buildTemplateGrid() {
   const body = document.getElementById('template-body');
   body.innerHTML = '';
-
-  const categories = [
-    { key: 'social',   label: 'Social' },
-    { key: 'business', label: 'Business' },
-    { key: 'event',    label: 'Event / Party' },
-  ];
-
-  categories.forEach(cat => {
+  [['social','Social'],['business','Business'],['event','Event / Party']].forEach(([key,label]) => {
     const catLabel = document.createElement('div');
-    catLabel.className = 'template-category-label';
-    catLabel.textContent = cat.label;
+    catLabel.className = 'tpl-category-label';
+    catLabel.textContent = label;
     body.appendChild(catLabel);
 
     const grid = document.createElement('div');
-    grid.className = 'template-grid';
+    grid.className = 'tpl-grid';
 
-    TEMPLATES[cat.key].forEach(tpl => {
+    TEMPLATES[key].forEach(tpl => {
       const card = document.createElement('button');
       card.className = 'tpl-btn';
       card.dataset.id = tpl.id;
 
+      const preview = document.createElement('div');
+      preview.className = 'tpl-preview';
+      card.appendChild(preview);
+
+      const lbl = document.createElement('div');
+      lbl.className = 'tpl-label';
+      lbl.textContent = tpl.label;
+      card.appendChild(lbl);
+
       // Mini QR preview
-      const previewDiv = document.createElement('div');
-      previewDiv.className = 'tpl-preview';
-      card.appendChild(previewDiv);
-
-      const label = document.createElement('div');
-      label.className = 'tpl-label';
-      label.textContent = tpl.label;
-      card.appendChild(label);
-
-      // Generate mini QR
-      const miniBase = { width:52, height:52, type:'canvas', data:'Q', margin:2, qrOptions:{errorCorrectionLevel:'M'}, imageOptions:{hideBackgroundDots:true,imageSize:0.4,margin:2} };
+      const miniBase = { width:52,height:52,type:'canvas',data:'Q',margin:2,qrOptions:{errorCorrectionLevel:'M'},imageOptions:{hideBackgroundDots:true,imageSize:0.4,margin:2} };
       const miniOpts = sanitiseOptions(Object.assign(miniBase, deepClone(tpl.opts)));
-      miniOpts.width = 52; miniOpts.height = 52; miniOpts.data = 'Q'; miniOpts.margin = 2;
-      delete miniOpts.image;
-      try {
-        const mini = new QRCodeStyling(miniOpts);
-        mini.append(previewDiv);
-      } catch(e) {}
+      miniOpts.width=52; miniOpts.height=52; miniOpts.data='Q'; miniOpts.margin=2; delete miniOpts.image;
+      try { new QRCodeStyling(miniOpts).append(preview); } catch(e) {}
 
       card.addEventListener('click', () => {
         activeTemplate = tpl.id;
@@ -1475,89 +1040,32 @@ function buildTemplateGrid() {
         card.classList.add('active');
         applyTemplate(tpl);
       });
-
       grid.appendChild(card);
     });
-
     body.appendChild(grid);
   });
 }
 
 function applyTemplate(tpl) {
-  const savedData   = options.data;
-  const savedImage  = options.image;
-  const savedW      = options.width;
-  const savedH      = options.height;
-  const savedMargin = options.margin;
-  const savedImgOpts = deepClone(options.imageOptions);
-
-  // Apply template opts
-  if (tpl.opts.dotsOptions)        Object.assign(options.dotsOptions,        tpl.opts.dotsOptions);
-  if (tpl.opts.cornersSquareOptions) Object.assign(options.cornersSquareOptions, tpl.opts.cornersSquareOptions);
-  if (tpl.opts.cornersDotOptions)  Object.assign(options.cornersDotOptions,  tpl.opts.cornersDotOptions);
-  if (tpl.opts.backgroundOptions)  Object.assign(options.backgroundOptions,  tpl.opts.backgroundOptions);
-  if (tpl.opts.qrOptions)          Object.assign(options.qrOptions,          tpl.opts.qrOptions);
-
-  // Restore preserved fields
-  options.data         = savedData;
-  options.image        = savedImage;
-  options.width        = savedW;
-  options.height       = savedH;
-  options.margin       = savedMargin;
-  options.imageOptions = savedImgOpts;
-
+  const saved = { data:options.data, image:options.image, width:options.width, height:options.height, margin:options.margin, imageOptions:deepClone(options.imageOptions) };
+  if (tpl.opts.dotsOptions)          options.dotsOptions = deepClone(tpl.opts.dotsOptions);
+  if (tpl.opts.cornersSquareOptions) options.cornersSquareOptions = deepClone(tpl.opts.cornersSquareOptions);
+  if (tpl.opts.cornersDotOptions)    options.cornersDotOptions = deepClone(tpl.opts.cornersDotOptions);
+  if (tpl.opts.backgroundOptions)    options.backgroundOptions = deepClone(tpl.opts.backgroundOptions);
+  if (tpl.opts.qrOptions)            Object.assign(options.qrOptions, tpl.opts.qrOptions);
+  Object.assign(options, saved);
   syncUIFromState();
   qrCode.update(sanitiseOptions(options));
   pushHistory();
-  updatePreviewMeta();
+  updateMeta();
 }
 
 /* ══════════════════════════════════════════════════════════
    SYNC UI FROM STATE
 ══════════════════════════════════════════════════════════ */
-
 function syncUIFromState() {
   // Text
   document.getElementById('qr-text').value = options.data;
-
-  // Dot type
-  const dotVal = options.dotsOptions.type || 'square';
-  document.querySelectorAll('#dot-type-grid .type-btn').forEach(b => {
-    b.classList.toggle('active', b.querySelector('span').textContent.toLowerCase().replace(/[ .]/g,'') === dotVal.replace(/[ -]/g,'') ||
-      DOT_TYPES.find(d => d.val === dotVal)?.label === b.querySelector('span').textContent);
-  });
-
-  // Dot colour
-  const dotColor = (options.dotsOptions.gradient ? null : options.dotsOptions.color) || '#000000';
-  document.getElementById('dot-color-picker').value = dotColor;
-  document.getElementById('dot-color-hex').value = dotColor.toUpperCase();
-
-  // CSQ type
-  document.querySelectorAll('#csq-type-grid .type-btn').forEach(b => {
-    const ctype = options.cornersSquareOptions.type || 'square';
-    b.classList.toggle('active', CSQ_TYPES.find(t => t.val === ctype)?.label === b.querySelector('span').textContent);
-  });
-
-  // CSQ colour
-  const csqColor = options.cornersSquareOptions.color || '#000000';
-  document.getElementById('csq-color-picker').value = csqColor;
-  document.getElementById('csq-color-hex').value = csqColor.toUpperCase();
-
-  // CDOT type
-  document.querySelectorAll('#cdot-type-grid .type-btn').forEach(b => {
-    const ctype = options.cornersDotOptions.type || 'square';
-    b.classList.toggle('active', CDOT_TYPES.find(t => t.val === ctype)?.label === b.querySelector('span').textContent);
-  });
-
-  // CDOT colour
-  const cdotColor = options.cornersDotOptions.color || '#000000';
-  document.getElementById('cdot-color-picker').value = cdotColor;
-  document.getElementById('cdot-color-hex').value = cdotColor.toUpperCase();
-
-  // BG colour
-  const bgColor = options.backgroundOptions.color || '#ffffff';
-  document.getElementById('bg-color-picker').value = bgColor;
-  document.getElementById('bg-color-hex').value = bgColor.toUpperCase();
 
   // EC
   document.querySelectorAll('#ec-segmented button').forEach(b => {
@@ -1567,49 +1075,101 @@ function syncUIFromState() {
   // Margin
   document.getElementById('qr-margin').value = options.margin;
   document.getElementById('margin-val').textContent = options.margin;
+
+  // Dots — detect if gradient is set, switch tab accordingly
+  const dotsHasGrad = !!(options.dotsOptions && options.dotsOptions.gradient);
+  setColorModeUI('dot', dotsHasGrad ? 'gradient' : 'solid');
+  if (!dotsHasGrad && options.dotsOptions && options.dotsOptions.color) {
+    document.getElementById('dot-color-picker').value = options.dotsOptions.color;
+    document.getElementById('dot-color-hex').value = options.dotsOptions.color.toUpperCase();
+  }
+
+  // CSQ
+  const csqHasGrad = !!(options.cornersSquareOptions && options.cornersSquareOptions.gradient);
+  setColorModeUI('csq', csqHasGrad ? 'gradient' : 'solid');
+  if (!csqHasGrad && options.cornersSquareOptions && options.cornersSquareOptions.color) {
+    document.getElementById('csq-color-picker').value = options.cornersSquareOptions.color;
+    document.getElementById('csq-color-hex').value = options.cornersSquareOptions.color.toUpperCase();
+  }
+
+  // CDOT
+  const cdotHasGrad = !!(options.cornersDotOptions && options.cornersDotOptions.gradient);
+  setColorModeUI('cdot', cdotHasGrad ? 'gradient' : 'solid');
+  if (!cdotHasGrad && options.cornersDotOptions && options.cornersDotOptions.color) {
+    document.getElementById('cdot-color-picker').value = options.cornersDotOptions.color;
+    document.getElementById('cdot-color-hex').value = options.cornersDotOptions.color.toUpperCase();
+  }
+
+  // Background
+  const bgColor = options.backgroundOptions && options.backgroundOptions.color;
+  const bgHasGrad = !!(options.backgroundOptions && options.backgroundOptions.gradient);
+  const bgIsTransparent = bgColor === 'rgba(0,0,0,0)' || bgColor === 'transparent';
+  const bgMode = bgIsTransparent ? 'transparent' : (bgHasGrad ? 'gradient' : 'solid');
+  setBgModeUI(bgMode);
+  if (!bgIsTransparent && !bgHasGrad && bgColor) {
+    document.getElementById('bg-color-picker').value = bgColor;
+    document.getElementById('bg-color-hex').value = bgColor.toUpperCase();
+  }
+
+  // Dot type grid
+  refreshTypeGrid('dot-type-grid', DOT_TYPES, options.dotsOptions && options.dotsOptions.type);
+  refreshTypeGrid('csq-type-grid', CSQ_TYPES, options.cornersSquareOptions && options.cornersSquareOptions.type);
+  refreshTypeGrid('cdot-type-grid', CDOT_TYPES, options.cornersDotOptions && options.cornersDotOptions.type);
+}
+
+function setColorModeUI(target, mode) {
+  colorModes[target] = mode;
+  const tabs = document.querySelectorAll(`.color-mode-tab[data-target="${target}"]`);
+  tabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+  document.getElementById(`${target}-solid-panel`).classList.toggle('visible', mode === 'solid');
+  document.getElementById(`${target}-gradient-panel`).classList.toggle('visible', mode === 'gradient');
+}
+
+function setBgModeUI(mode) {
+  colorModes.bg = mode;
+  document.querySelectorAll('.bg-mode-tab').forEach(t => t.classList.toggle('active', t.dataset.bg === mode));
+  document.getElementById('bg-solid-panel').classList.toggle('visible', mode === 'solid');
+  document.getElementById('bg-gradient-panel').classList.toggle('visible', mode === 'gradient');
+  document.getElementById('bg-transparent-panel').classList.toggle('visible', mode === 'transparent');
+}
+
+function refreshTypeGrid(gridId, types, activeVal) {
+  document.querySelectorAll(`#${gridId} .type-btn`).forEach(btn => {
+    const idx = Array.from(btn.parentElement.children).indexOf(btn);
+    btn.classList.toggle('active', types[idx] && types[idx].val === activeVal);
+  });
 }
 
 /* ══════════════════════════════════════════════════════════
    EXPORT
 ══════════════════════════════════════════════════════════ */
-
-function triggerDownload(url, filename) {
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+function triggerDownload(url, name) {
+  const a = document.createElement('a'); a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
-
 async function exportPNG() {
   const size = parseInt(document.getElementById('resolution-select').value);
-  const hiRes = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width: size, height: size, type: 'canvas' }));
-  const blob = await hiRes.getRawData('png');
+  const hi = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width:size, height:size, type:'canvas' }));
+  const blob = await hi.getRawData('png');
   const url = URL.createObjectURL(blob);
-  triggerDownload(url, 'qrcode-' + size + '.png');
+  triggerDownload(url, `qrcode-${size}.png`);
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
-
 async function exportSVG() {
-  const hiRes = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width: 1000, height: 1000, type: 'svg' }));
-  const blob = await hiRes.getRawData('svg');
+  const hi = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width:1000, height:1000, type:'svg' }));
+  const blob = await hi.getRawData('svg');
   const url = URL.createObjectURL(blob);
   triggerDownload(url, 'qrcode.svg');
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
-
 async function exportPDF() {
-  const hiRes = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width: 1000, height: 1000, type: 'canvas' }));
-  const blob = await hiRes.getRawData('png');
+  const hi = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width:1000, height:1000, type:'canvas' }));
+  const blob = await hi.getRawData('png');
   const reader = new FileReader();
   reader.onload = () => {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    // A4 = 210×297mm. Centre 120mm QR.
-    const qrMM = 120;
-    const x = (210 - qrMM) / 2;
-    const y = (297 - qrMM) / 2;
+    const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+    const qrMM = 120, x = (210-qrMM)/2, y = (297-qrMM)/2;
     doc.addImage(reader.result, 'PNG', x, y, qrMM, qrMM);
     doc.save('qrcode.pdf');
   };
@@ -1617,114 +1177,90 @@ async function exportPDF() {
 }
 
 /* ══════════════════════════════════════════════════════════
-   INIT — WIRE ALL CONTROLS
+   INIT
 ══════════════════════════════════════════════════════════ */
-
 function init() {
-  // --- Text input
+  // Text
   document.getElementById('qr-text').addEventListener('input', e => {
     options.data = e.target.value || ' ';
     activeTemplate = null;
     triggerUpdate();
   });
 
-  // --- Dot type grid
-  buildTypeGrid('dot-type-grid', DOT_TYPES,
-    () => options.dotsOptions.type,
-    val => { options.dotsOptions.type = val; }
-  );
+  // Type grids
+  buildTypeGrid('dot-type-grid',  DOT_TYPES,  () => options.dotsOptions.type,          v => { options.dotsOptions.type = v; });
+  buildTypeGrid('csq-type-grid',  CSQ_TYPES,  () => options.cornersSquareOptions.type, v => { options.cornersSquareOptions.type = v; });
+  buildTypeGrid('cdot-type-grid', CDOT_TYPES, () => options.cornersDotOptions.type,    v => { options.cornersDotOptions.type = v; });
 
-  // --- Dot colour
-  bindColorPair('dot-color-picker', 'dot-color-hex', val => {
-    options.dotsOptions.color = val;
-    options.dotsOptions.gradient = null;
-    document.getElementById('dot-grad-on').checked = false;
-    document.getElementById('dot-grad-ctrl').classList.remove('visible');
+  // Solid colour pickers
+  bindColorPair('dot-color-picker',  'dot-color-hex',  v => { options.dotsOptions.color = v; delete options.dotsOptions.gradient; });
+  bindColorPair('csq-color-picker',  'csq-color-hex',  v => { options.cornersSquareOptions.color = v; delete options.cornersSquareOptions.gradient; });
+  bindColorPair('cdot-color-picker', 'cdot-color-hex', v => { options.cornersDotOptions.color = v; delete options.cornersDotOptions.gradient; });
+  bindColorPair('bg-color-picker',   'bg-color-hex',   v => { options.backgroundOptions = { color:v }; });
+
+  // Colour mode tabs
+  initColorModeTabs();
+  initBgModeTabs();
+
+  // Gradient inputs for dots
+  ['dot-grad-type','dot-grad-c1','dot-grad-c2','dot-grad-rot'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => {
+      if (id === 'dot-grad-rot') document.getElementById('dot-grad-rot-val').textContent = el.value + '°';
+      if (colorModes.dot === 'gradient') { rebuildGradient('dot'); triggerUpdate(); }
+    });
+  });
+  // Gradient inputs for csq
+  ['csq-grad-type','csq-grad-c1','csq-grad-c2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => { if (colorModes.csq === 'gradient') { rebuildGradient('csq'); triggerUpdate(); } });
+  });
+  // Gradient inputs for cdot
+  ['cdot-grad-type','cdot-grad-c1','cdot-grad-c2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => { if (colorModes.cdot === 'gradient') { rebuildGradient('cdot'); triggerUpdate(); } });
+  });
+  // Gradient inputs for bg
+  ['bg-grad-type','bg-grad-c1','bg-grad-c2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => {
+      if (colorModes.bg === 'gradient') {
+        const type = document.getElementById('bg-grad-type').value;
+        const c1 = document.getElementById('bg-grad-c1').value;
+        const c2 = document.getElementById('bg-grad-c2').value;
+        options.backgroundOptions = { gradient:{ type, rotation:0, colorStops:[{offset:0,color:c1},{offset:1,color:c2}] } };
+        triggerUpdate();
+      }
+    });
+  });
+  // Hex inputs for gradient colours (need separate binding since bindColorPair is for solid pickers)
+  ['dot-grad-c1','dot-grad-c2','csq-grad-c1','csq-grad-c2','cdot-grad-c1','cdot-grad-c2','bg-grad-c1','bg-grad-c2'].forEach(id => {
+    const picker = document.getElementById(id);
+    const hexId  = id + '-hex';
+    const hexEl  = document.getElementById(hexId);
+    if (!picker || !hexEl) return;
+    picker.addEventListener('input', () => { hexEl.value = picker.value.toUpperCase(); });
+    hexEl.addEventListener('input', () => { if (/^#[0-9a-fA-F]{6}$/.test(hexEl.value)) picker.value = hexEl.value; });
   });
 
-  // --- Dot gradient
-  initGradientSection('dot', options.dotsOptions, 'color');
-
-  // --- Corner square type grid
-  buildTypeGrid('csq-type-grid', CSQ_TYPES,
-    () => options.cornersSquareOptions.type,
-    val => { options.cornersSquareOptions.type = val; }
-  );
-
-  // --- Corner square colour
-  bindColorPair('csq-color-picker', 'csq-color-hex', val => {
-    options.cornersSquareOptions.color = val;
-    options.cornersSquareOptions.gradient = null;
-    document.getElementById('csq-grad-on').checked = false;
-    document.getElementById('csq-grad-ctrl').classList.remove('visible');
-  });
-
-  // --- Corner square gradient
-  initGradientSection('csq', options.cornersSquareOptions, 'color');
-
-  // --- Corner dot type grid
-  buildTypeGrid('cdot-type-grid', CDOT_TYPES,
-    () => options.cornersDotOptions.type,
-    val => { options.cornersDotOptions.type = val; }
-  );
-
-  // --- Corner dot colour
-  bindColorPair('cdot-color-picker', 'cdot-color-hex', val => {
-    options.cornersDotOptions.color = val;
-    options.cornersDotOptions.gradient = null;
-    document.getElementById('cdot-grad-on').checked = false;
-    document.getElementById('cdot-grad-ctrl').classList.remove('visible');
-  });
-
-  // --- Corner dot gradient
-  initGradientSection('cdot', options.cornersDotOptions, 'color');
-
-  // --- Background colour
-  bindColorPair('bg-color-picker', 'bg-color-hex', val => {
-    options.backgroundOptions.color = val;
-    options.backgroundOptions.gradient = null;
-    document.getElementById('bg-grad-on').checked = false;
-    document.getElementById('bg-grad-ctrl').classList.remove('visible');
-    document.getElementById('bg-transparent').checked = false;
-  });
-
-  // --- Background gradient
-  initGradientSection('bg', options.backgroundOptions, 'color');
-
-  // --- Transparent background
-  document.getElementById('bg-transparent').addEventListener('change', e => {
-    if (e.target.checked) {
-      options.backgroundOptions.color = 'transparent';
-      options.backgroundOptions.gradient = null;
-    } else {
-      options.backgroundOptions.color = document.getElementById('bg-color-picker').value;
-    }
-    triggerUpdate();
-  });
-
-  // --- Logo size
+  // Logo sliders
   document.getElementById('logo-size').addEventListener('input', e => {
-    const val = parseInt(e.target.value) / 100;
-    options.imageOptions.imageSize = val;
+    options.imageOptions.imageSize = parseInt(e.target.value) / 100;
     document.getElementById('logo-size-val').textContent = e.target.value + '%';
     checkLogoWarning();
     triggerUpdate();
   });
-
-  // --- Logo margin
   document.getElementById('logo-margin').addEventListener('input', e => {
     options.imageOptions.margin = parseInt(e.target.value);
     document.getElementById('logo-margin-val').textContent = e.target.value;
     triggerUpdate();
   });
-
-  // --- Hide background dots
   document.getElementById('logo-hide-dots').addEventListener('change', e => {
     options.imageOptions.hideBackgroundDots = e.target.checked;
     triggerUpdate();
   });
 
-  // --- Logo file upload
+  // Logo upload
   document.getElementById('logo-file-input').addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1738,14 +1274,14 @@ function init() {
     reader.readAsDataURL(file);
   });
 
-  // --- QR margin
+  // Margin
   document.getElementById('qr-margin').addEventListener('input', e => {
     options.margin = parseInt(e.target.value);
     document.getElementById('margin-val').textContent = e.target.value;
     triggerUpdate();
   });
 
-  // --- Error correction
+  // EC
   document.querySelectorAll('#ec-segmented button').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('#ec-segmented button').forEach(b => b.classList.remove('active'));
@@ -1756,25 +1292,22 @@ function init() {
     });
   });
 
-  // --- Build icon grid
+  // Grids
   buildIconGrid();
-
-  // --- Build template grid
   buildTemplateGrid();
 
-  // --- Keyboard shortcuts
+  // Keyboard
   document.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undoState(); }
-    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redoState(); }
+    if ((e.ctrlKey||e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undoState(); }
+    if ((e.ctrlKey||e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redoState(); }
   });
 
-  // --- Initial render + push first history state
+  // Boot
   qrCode.update(sanitiseOptions(options));
   pushHistory();
-  updatePreviewMeta();
+  updateMeta();
 }
 
-// Boot
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
