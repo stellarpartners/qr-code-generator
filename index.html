@@ -643,25 +643,24 @@ const CDOT_TYPES = [
 ];
 
 /* ══════════════════════════════════════════════════════════
-   ICONS — loaded dynamically from icons/icons.json + SVG files
-   Each entry: { id, label, file, svgEl (populated at runtime) }
+   ICONS — static registry; SVGs served as files from icons/
+   The QR library receives the file path as options.image URL.
+   The grid displays them via <img src="..."> — no fetch needed.
 ══════════════════════════════════════════════════════════ */
-let ICONS = []; // populated by loadIcons()
-
-async function loadIcons() {
-  try {
-    const res  = await fetch('icons/icons.json');
-    const list = await res.json();
-    // Fetch all SVG files in parallel
-    const svgTexts = await Promise.all(
-      list.map(icon => fetch(icon.file).then(r => r.text()).catch(() => ''))
-    );
-    ICONS = list.map((icon, i) => ({ ...icon, svgEl: svgTexts[i] }));
-  } catch(e) {
-    console.warn('Icon load failed, icons grid will be empty.', e);
-    ICONS = [];
-  }
-}
+const ICONS = [
+  { id:'facebook',  label:'Facebook',   file:'icons/facebook.svg'  },
+  { id:'instagram', label:'Instagram',  file:'icons/instagram.svg' },
+  { id:'linkedin',  label:'LinkedIn',   file:'icons/linkedin.svg'  },
+  { id:'x',         label:'X / Twitter',file:'icons/x.svg'         },
+  { id:'youtube',   label:'YouTube',    file:'icons/youtube.svg'   },
+  { id:'tiktok',    label:'TikTok',     file:'icons/tiktok.svg'    },
+  { id:'whatsapp',  label:'WhatsApp',   file:'icons/whatsapp.svg'  },
+  { id:'snapchat',  label:'Snapchat',   file:'icons/snapchat.svg'  },
+  { id:'globe',     label:'Ιστότοπος',  file:'icons/globe.svg'     },
+  { id:'email',     label:'Email',      file:'icons/email.svg'     },
+  { id:'phone',     label:'Τηλέφωνο',   file:'icons/phone.svg'     },
+  { id:'location',  label:'Τοποθεσία',  file:'icons/location.svg'  },
+];
 
 /* ══════════════════════════════════════════════════════════
    TEMPLATES
@@ -1066,24 +1065,25 @@ function buildTypeGrid(containerId, types, getter, setter) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   ICON GRID (Simple Icons — proper brand SVGs)
+   ICON GRID — <img src="icons/xxx.svg"> references, no inline SVG
 ══════════════════════════════════════════════════════════ */
 function buildIconGrid() {
   const grid = document.getElementById('icon-grid');
   grid.innerHTML = '';
 
   ICONS.forEach(icon => {
-    const dataURL = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(icon.svgEl);
     const btn = document.createElement('button');
     btn.className = 'icon-btn';
     btn.dataset.id = icon.id;
-    btn.innerHTML = icon.svgEl + `<span>${icon.label}</span>`;
-    // Mark active if image matches
-    if (options.image === dataURL) btn.classList.add('active');
+    btn.dataset.file = icon.file;
+    // Use <img> pointing directly at the SVG file
+    btn.innerHTML = `<img src="${icon.file}" width="26" height="26" alt="${icon.label}"><span>${icon.label}</span>`;
+    // Restore active state if this icon is the current image
+    if (options.image === icon.file) btn.classList.add('active');
     btn.addEventListener('click', () => {
       document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      options.image = dataURL;
+      options.image = icon.file;
       checkLogoWarning();
       triggerUpdate();
     });
@@ -1296,10 +1296,7 @@ async function exportPDF() {
 /* ══════════════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════════════ */
-async function init() {
-  // Load icons from SVG files (async), then build grid
-  await loadIcons();
-
+function init() {
   // Load saved config from localStorage
   const restored = loadFromStorage();
 
@@ -1437,7 +1434,7 @@ async function init() {
   updateMeta();
 }
 
-document.addEventListener('DOMContentLoaded', () => { init().catch(console.error); });
+document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
