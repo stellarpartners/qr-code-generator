@@ -44,6 +44,10 @@
     #sidebar-scroll::-webkit-scrollbar-thumb { background:var(--clr-border); border-radius:2px; }
 
     /* ─── Download panel ──────────────────────────────────────── */
+    #credits { flex-shrink:0; padding:10px var(--sp-md); border-top:1px solid var(--clr-border); background:var(--clr-sidebar); text-align:center; }
+    #credits a { font-size:11px; color:var(--clr-muted); text-decoration:none; line-height:1.5; }
+    #credits a:hover { color:var(--clr-accent); }
+    #credits a span.heart { color:#ef4444; }
     #download-panel { flex-shrink:0; padding:var(--sp-md); border-top:1px solid var(--clr-border); background:var(--clr-sidebar); }
     #download-panel-header { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--clr-muted); margin-bottom:var(--sp-sm); }
     #download-row { display:flex; gap:var(--sp-sm); align-items:center; }
@@ -550,6 +554,11 @@
       </div>
 
     </div><!-- /sidebar-scroll -->
+
+    <!-- Credits -->
+    <div id="credits">
+      <a href="https://stellarpartners.gr/" target="_blank" rel="noopener">Δημιουργήθηκε με <span class="heart">♥</span> από την Stellar Partners</a>
+    </div>
 
     <!-- Download panel -->
     <div id="download-panel">
