@@ -868,7 +868,7 @@ function executeClearAll() {
   syncUIFromState();
 
   // ── 7. Re-render the QR preview ──
-  qrCode.update(sanitiseOptions(options));
+  renderQR();
 
   // ── 8. Clear localStorage ──
   clearStorage();
@@ -887,9 +887,19 @@ document.getElementById('confirm-overlay').addEventListener('click', function(e)
 
 /* ══════════════════════════════════════════════════════════
    QR INSTANCE
+   We always recreate the instance on every render because
+   qr-code-styling's .update() does not clear a gradient once
+   set — the only reliable reset is a fresh instantiation.
 ══════════════════════════════════════════════════════════ */
-const qrCode = new QRCodeStyling(sanitiseOptions(options));
-qrCode.append(document.getElementById('qr-preview'));
+const _qrContainer = document.getElementById('qr-preview');
+let qrCode = new QRCodeStyling(sanitiseOptions(options));
+qrCode.append(_qrContainer);
+
+function renderQR() {
+  _qrContainer.innerHTML = '';
+  qrCode = new QRCodeStyling(sanitiseOptions(options));
+  qrCode.append(_qrContainer);
+}
 
 /* ══════════════════════════════════════════════════════════
    UPDATE ENGINE
@@ -898,7 +908,7 @@ let _ut = null;
 function triggerUpdate(skipHistory) {
   clearTimeout(_ut);
   _ut = setTimeout(() => {
-    qrCode.update(sanitiseOptions(options));
+    renderQR();
     if (!skipHistory) pushHistory();
     updateMeta();
     saveToStorage();
@@ -932,7 +942,7 @@ function redoState() {
 function applySnapshot(snap) {
   Object.assign(options, deepClone(snap));
   syncUIFromState();
-  qrCode.update(sanitiseOptions(options));
+  renderQR();
   updateMeta();
   updateUndoBtns();
   saveToStorage();
@@ -1152,7 +1162,7 @@ function applyTemplate(tpl) {
   if (tpl.opts.qrOptions)            Object.assign(options.qrOptions, tpl.opts.qrOptions);
   Object.assign(options, saved);
   syncUIFromState();
-  qrCode.update(sanitiseOptions(options));
+  renderQR();
   pushHistory();
   updateMeta();
   saveToStorage();
@@ -1413,13 +1423,9 @@ function init() {
     if (e.key === 'Escape') closeClearModal();
   });
 
-  // Boot — if we restored from storage, sync UI then render; otherwise fresh render
-  if (restored) {
-    syncUIFromState();
-    qrCode.update(sanitiseOptions(options));
-  } else {
-    qrCode.update(sanitiseOptions(options));
-  }
+  // Boot — sync UI from state (covers both fresh start and restored config)
+  if (restored) syncUIFromState();
+  renderQR();
   pushHistory();
   updateMeta();
 }
