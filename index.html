@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QR Code Generator</title>
-  <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+  <script src="https://unpkg.com/qr-code-styling@1.9.2/lib/qr-code-styling.js"></script>
   <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <style>
     /* ─── Reset ─────────────────────────────────────────────── */
@@ -1142,9 +1142,8 @@ const TEMPLATES = {
 const options = {
   width: 360,
   height: 360,
-  type: 'svg',
+  type: 'canvas',
   data: 'https://example.com',
-  image: null,
   margin: 10,
   qrOptions: { errorCorrectionLevel: 'M' },
   imageOptions: { hideBackgroundDots: true, imageSize: 0.4, margin: 4 },
@@ -1163,10 +1162,27 @@ const MAX_HISTORY = 50;
 let activeTemplate = null;
 
 /* ══════════════════════════════════════════════════════════
+   SANITISE OPTIONS
+══════════════════════════════════════════════════════════ */
+
+function sanitiseOptions(opts) {
+  // qr-code-styling chokes on null gradient values — must omit them entirely
+  const clean = deepClone(opts);
+  ['dotsOptions','cornersSquareOptions','cornersDotOptions','backgroundOptions'].forEach(key => {
+    if (clean[key] && clean[key].gradient === null) {
+      delete clean[key].gradient;
+    }
+  });
+  // Remove image key entirely when not set (null/undefined breaks some versions)
+  if (!clean.image) delete clean.image;
+  return clean;
+}
+
+/* ══════════════════════════════════════════════════════════
    QR CODE INSTANCE
 ══════════════════════════════════════════════════════════ */
 
-const qrCode = new QRCodeStyling(options);
+const qrCode = new QRCodeStyling(sanitiseOptions(options));
 qrCode.append(document.getElementById('qr-preview'));
 
 /* ══════════════════════════════════════════════════════════
@@ -1178,7 +1194,7 @@ let _updateTimer = null;
 function triggerUpdate(skipHistory) {
   clearTimeout(_updateTimer);
   _updateTimer = setTimeout(() => {
-    qrCode.update(options);
+    qrCode.update(sanitiseOptions(options));
     if (!skipHistory) pushHistory();
     updatePreviewMeta();
   }, 120);
@@ -1216,7 +1232,7 @@ function redoState() {
 function applySnapshot(snap) {
   Object.assign(options, deepClone(snap));
   syncUIFromState();
-  qrCode.update(options);
+  qrCode.update(sanitiseOptions(options));
   updatePreviewMeta();
   updateUndoRedoBtns();
 }
@@ -1444,8 +1460,10 @@ function buildTemplateGrid() {
       card.appendChild(label);
 
       // Generate mini QR
-      const miniOpts = Object.assign({}, { width:52, height:52, type:'svg', data:'Q', margin:2, qrOptions:{errorCorrectionLevel:'M'}, imageOptions:{hideBackgroundDots:true,imageSize:0.4,margin:2} }, deepClone(tpl.opts));
+      const miniBase = { width:52, height:52, type:'canvas', data:'Q', margin:2, qrOptions:{errorCorrectionLevel:'M'}, imageOptions:{hideBackgroundDots:true,imageSize:0.4,margin:2} };
+      const miniOpts = sanitiseOptions(Object.assign(miniBase, deepClone(tpl.opts)));
       miniOpts.width = 52; miniOpts.height = 52; miniOpts.data = 'Q'; miniOpts.margin = 2;
+      delete miniOpts.image;
       try {
         const mini = new QRCodeStyling(miniOpts);
         mini.append(previewDiv);
@@ -1489,7 +1507,7 @@ function applyTemplate(tpl) {
   options.imageOptions = savedImgOpts;
 
   syncUIFromState();
-  qrCode.update(options);
+  qrCode.update(sanitiseOptions(options));
   pushHistory();
   updatePreviewMeta();
 }
@@ -1566,7 +1584,7 @@ function triggerDownload(url, filename) {
 
 async function exportPNG() {
   const size = parseInt(document.getElementById('resolution-select').value);
-  const hiRes = new QRCodeStyling(Object.assign({}, deepClone(options), { width: size, height: size, type: 'canvas' }));
+  const hiRes = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width: size, height: size, type: 'canvas' }));
   const blob = await hiRes.getRawData('png');
   const url = URL.createObjectURL(blob);
   triggerDownload(url, 'qrcode-' + size + '.png');
@@ -1574,7 +1592,7 @@ async function exportPNG() {
 }
 
 async function exportSVG() {
-  const hiRes = new QRCodeStyling(Object.assign({}, deepClone(options), { width: 1000, height: 1000, type: 'svg' }));
+  const hiRes = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width: 1000, height: 1000, type: 'svg' }));
   const blob = await hiRes.getRawData('svg');
   const url = URL.createObjectURL(blob);
   triggerDownload(url, 'qrcode.svg');
@@ -1582,7 +1600,7 @@ async function exportSVG() {
 }
 
 async function exportPDF() {
-  const hiRes = new QRCodeStyling(Object.assign({}, deepClone(options), { width: 1000, height: 1000, type: 'canvas' }));
+  const hiRes = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width: 1000, height: 1000, type: 'canvas' }));
   const blob = await hiRes.getRawData('png');
   const reader = new FileReader();
   reader.onload = () => {
@@ -1751,7 +1769,7 @@ function init() {
   });
 
   // --- Initial render + push first history state
-  qrCode.update(options);
+  qrCode.update(sanitiseOptions(options));
   pushHistory();
   updatePreviewMeta();
 }
