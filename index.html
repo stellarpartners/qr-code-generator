@@ -1,11 +1,32 @@
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Δημιουργός QR Code</title>
-  <script src="https://unpkg.com/qr-code-styling@1.9.2/lib/qr-code-styling.js"></script>
-  <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <title>QR Code Generator — design, style &amp; export QR codes</title>
+  <meta name="description" content="A free browser-based QR code generator. Style the dots, corners and background, add a logo, then export PNG, SVG or PDF. Everything runs locally — nothing is uploaded.">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://qrcode.stellarpartners.gr/">
+  <!-- Open Graph / social preview -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="QR Code Generator">
+  <meta property="og:title" content="QR Code Generator — design, style &amp; export QR codes">
+  <meta property="og:description" content="Style the dots, corners and background, add a logo, then export PNG, SVG or PDF. Runs entirely in your browser.">
+  <meta property="og:url" content="https://qrcode.stellarpartners.gr/">
+  <meta name="twitter:card" content="summary">
+  <!--
+    Both libraries load from unpkg with a pinned version AND a Subresource
+    Integrity hash. If unpkg ever serves different bytes, the browser refuses
+    to run them instead of executing unknown code.
+  -->
+  <script src="https://unpkg.com/qr-code-styling@1.9.2/lib/qr-code-styling.js"
+          integrity="sha384-P7sw4KeI1SDhOs6wYFsBysIIHFqMTgG4y9vunEfL8ZuV0WhnHsh9MRu9Rso17MtY"
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"
+          integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk"
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <style>
     /* ─── Reset ──────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -230,13 +251,31 @@
     #confirm-ok { flex:1; padding:10px; border:none; border-radius:var(--r-md); background:#ef4444; font-size:13px; font-weight:600; cursor:pointer; color:white; transition:background .12s; }
     #confirm-ok:hover { background:#dc2626; }
 
+    /* ─── Empty input state ───────────────────────────────────── */
+    #qr-empty { display:flex; align-items:center; justify-content:center; text-align:center;
+      width:360px; height:360px; padding:var(--sp-lg); font-size:13px; color:var(--clr-muted);
+      border:2px dashed var(--clr-border); border-radius:var(--r-md); }
+    .dl-btn:disabled { opacity:.45; cursor:not-allowed; }
+    #export-empty-hint { display:none; font-size:11px; color:#92400e; margin-top:6px; text-align:center; }
+    #export-empty-hint.visible { display:block; }
+
+    /* ─── Responsive ──────────────────────────────────────────────
+       Below 900px the two-column layout stops working: the fixed 440px
+       sidebar squeezes the preview off-screen and collapses the scroll
+       area. Stack the panels, let the page scroll, and show the QR first. */
     @media (max-width:900px) {
       :root { --sidebar-w:340px; }
     }
     @media (max-width:768px) {
-      #app { flex-direction:column; }
-      #sidebar { width:100%; min-width:unset; border-right:none; border-bottom:1px solid var(--clr-border); max-height:50vh; }
-      #preview-area { flex:1; padding:var(--sp-md); }
+      #app { flex-direction:column; height:auto; min-height:100vh; overflow:visible; }
+      #sidebar { width:100%; min-width:unset; border-right:none;
+                 border-bottom:1px solid var(--clr-border); max-height:none; overflow:visible; }
+      #sidebar-scroll { overflow-y:visible; }
+      /* QR preview first — it is the thing you came for */
+      #preview-area { order:-1; padding:var(--sp-md); gap:var(--sp-md); overflow:visible; }
+      #qr-preview-wrap { padding:var(--sp-sm); max-width:100%; }
+      #qr-preview canvas, #qr-preview svg { max-width:100%; height:auto; }
+      #qr-empty { width:min(360px, 90vw); height:min(360px, 90vw); }
     }
   </style>
 </head>
@@ -248,57 +287,57 @@
     <div id="sidebar-header">
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <div>
-          <h1>Δημιουργός QR Code</h1>
-          <p>Σχεδιασμός, προσαρμογή &amp; εξαγωγή</p>
+          <h1>QR Code Generator</h1>
+          <p>Design, customise &amp; export</p>
         </div>
         <button id="clear-all-btn" onclick="confirmClearAll()">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-          Εκκαθάριση
+          Clear all
         </button>
       </div>
     </div>
 
     <div id="sidebar-scroll">
 
-      <!-- 1. Περιεχόμενο -->
+      <!-- 1. Content -->
       <div class="acc-section" id="sec-content">
-        <div class="acc-header" onclick="toggleAcc('sec-content')">
-          <span class="acc-title"><span class="acc-title-icon">✏️</span>Περιεχόμενο</span>
+        <div class="acc-header" role="button" tabindex="0" aria-expanded="true" onclick="toggleAcc('sec-content')">
+          <span class="acc-title"><span class="acc-title-icon">✏️</span>Content</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
           <div class="field-full">
-            <span class="field-label">URL ή κείμενο</span>
+            <span class="field-label">URL or text</span>
             <textarea id="qr-text" placeholder="https://example.com" spellcheck="false">https://example.com</textarea>
           </div>
         </div>
       </div>
 
-      <!-- 2. Πρότυπα -->
+      <!-- 2. Templates -->
       <div class="acc-section" id="sec-tpl">
-        <div class="acc-header" onclick="toggleAcc('sec-tpl')">
-          <span class="acc-title"><span class="acc-title-icon">✨</span>Πρότυπα</span>
+        <div class="acc-header" role="button" tabindex="0" aria-expanded="true" onclick="toggleAcc('sec-tpl')">
+          <span class="acc-title"><span class="acc-title-icon">✨</span>Templates</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body" id="template-body"><!-- filled by JS --></div>
       </div>
 
-      <!-- 3. Στυλ Κουκκίδων -->
+      <!-- 3. Dot style -->
       <div class="acc-section collapsed" id="sec-dots">
-        <div class="acc-header" onclick="toggleAcc('sec-dots')">
-          <span class="acc-title"><span class="acc-title-icon">⬛</span>Στυλ Κουκκίδων</span>
+        <div class="acc-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleAcc('sec-dots')">
+          <span class="acc-title"><span class="acc-title-icon">⬛</span>Dot Style</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
           <div class="type-grid" id="dot-type-grid"></div>
-          <!-- Μονόχρωμο / Ντεγκραντέ -->
+          <!-- Solid / Gradient -->
           <div class="color-mode-tabs">
-            <button class="color-mode-tab active" data-target="dot" data-mode="solid">Μονόχρωμο</button>
-            <button class="color-mode-tab" data-target="dot" data-mode="gradient">Ντεγκραντέ</button>
+            <button class="color-mode-tab active" data-target="dot" data-mode="solid">Solid</button>
+            <button class="color-mode-tab" data-target="dot" data-mode="gradient">Gradient</button>
           </div>
           <div class="color-panel visible" id="dot-solid-panel">
             <div class="field-row">
-              <span class="field-label">Χρώμα</span>
+              <span class="field-label">Color</span>
               <div class="color-row">
                 <input type="color" id="dot-color-picker" value="#000000">
                 <input type="text" class="hex-input" id="dot-color-hex" value="#000000" maxlength="7">
@@ -307,21 +346,21 @@
           </div>
           <div class="color-panel" id="dot-gradient-panel">
             <div class="field-row">
-              <span class="field-label">Τύπος</span>
+              <span class="field-label">Type</span>
               <select class="gradient-type-select" id="dot-grad-type">
-                <option value="linear">Γραμμικό</option>
-                <option value="radial">Ακτινωτό</option>
+                <option value="linear">Linear</option>
+                <option value="radial">Radial</option>
               </select>
             </div>
             <div class="field-row">
-              <span class="field-label">Χρώμα 1</span>
+              <span class="field-label">Color 1</span>
               <div class="color-row">
                 <input type="color" id="dot-grad-c1" value="#000000">
                 <input type="text" class="hex-input" id="dot-grad-c1-hex" value="#000000" maxlength="7">
               </div>
             </div>
             <div class="field-row">
-              <span class="field-label">Χρώμα 2</span>
+              <span class="field-label">Color 2</span>
               <div class="color-row">
                 <input type="color" id="dot-grad-c2" value="#2563eb">
                 <input type="text" class="hex-input" id="dot-grad-c2-hex" value="#2563eb" maxlength="7">
@@ -329,30 +368,30 @@
             </div>
             <div class="slider-row">
               <div class="slider-header">
-                <span class="field-label">Περιστροφή</span>
+                <span class="field-label">Rotation</span>
                 <span class="slider-val" id="dot-grad-rot-val">0°</span>
               </div>
-              <input type="range" id="dot-grad-rot" min="0" max="360" value="0">
+              <input type="range" id="dot-grad-rot" min="0" max="360" value="0" aria-label="Gradient rotation in degrees">
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 4. Γωνιακά Τετράγωνα -->
+      <!-- 4. Corner squares -->
       <div class="acc-section collapsed" id="sec-csq">
-        <div class="acc-header" onclick="toggleAcc('sec-csq')">
-          <span class="acc-title"><span class="acc-title-icon">◼</span>Γωνιακά Τετράγωνα</span>
+        <div class="acc-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleAcc('sec-csq')">
+          <span class="acc-title"><span class="acc-title-icon">◼</span>Corner Squares</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
           <div class="type-grid" id="csq-type-grid"></div>
           <div class="color-mode-tabs">
-            <button class="color-mode-tab active" data-target="csq" data-mode="solid">Μονόχρωμο</button>
-            <button class="color-mode-tab" data-target="csq" data-mode="gradient">Ντεγκραντέ</button>
+            <button class="color-mode-tab active" data-target="csq" data-mode="solid">Solid</button>
+            <button class="color-mode-tab" data-target="csq" data-mode="gradient">Gradient</button>
           </div>
           <div class="color-panel visible" id="csq-solid-panel">
             <div class="field-row">
-              <span class="field-label">Χρώμα</span>
+              <span class="field-label">Color</span>
               <div class="color-row">
                 <input type="color" id="csq-color-picker" value="#000000">
                 <input type="text" class="hex-input" id="csq-color-hex" value="#000000" maxlength="7">
@@ -361,21 +400,21 @@
           </div>
           <div class="color-panel" id="csq-gradient-panel">
             <div class="field-row">
-              <span class="field-label">Τύπος</span>
+              <span class="field-label">Type</span>
               <select class="gradient-type-select" id="csq-grad-type">
-                <option value="linear">Γραμμικό</option>
-                <option value="radial">Ακτινωτό</option>
+                <option value="linear">Linear</option>
+                <option value="radial">Radial</option>
               </select>
             </div>
             <div class="field-row">
-              <span class="field-label">Χρώμα 1</span>
+              <span class="field-label">Color 1</span>
               <div class="color-row">
                 <input type="color" id="csq-grad-c1" value="#000000">
                 <input type="text" class="hex-input" id="csq-grad-c1-hex" value="#000000" maxlength="7">
               </div>
             </div>
             <div class="field-row">
-              <span class="field-label">Χρώμα 2</span>
+              <span class="field-label">Color 2</span>
               <div class="color-row">
                 <input type="color" id="csq-grad-c2" value="#2563eb">
                 <input type="text" class="hex-input" id="csq-grad-c2-hex" value="#2563eb" maxlength="7">
@@ -385,21 +424,21 @@
         </div>
       </div>
 
-      <!-- 5. Γωνιακές Κουκκίδες -->
+      <!-- 5. Corner dots -->
       <div class="acc-section collapsed" id="sec-cdot">
-        <div class="acc-header" onclick="toggleAcc('sec-cdot')">
-          <span class="acc-title"><span class="acc-title-icon">●</span>Γωνιακές Κουκκίδες</span>
+        <div class="acc-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleAcc('sec-cdot')">
+          <span class="acc-title"><span class="acc-title-icon">●</span>Corner Dots</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
           <div class="type-grid" id="cdot-type-grid"></div>
           <div class="color-mode-tabs">
-            <button class="color-mode-tab active" data-target="cdot" data-mode="solid">Μονόχρωμο</button>
-            <button class="color-mode-tab" data-target="cdot" data-mode="gradient">Ντεγκραντέ</button>
+            <button class="color-mode-tab active" data-target="cdot" data-mode="solid">Solid</button>
+            <button class="color-mode-tab" data-target="cdot" data-mode="gradient">Gradient</button>
           </div>
           <div class="color-panel visible" id="cdot-solid-panel">
             <div class="field-row">
-              <span class="field-label">Χρώμα</span>
+              <span class="field-label">Color</span>
               <div class="color-row">
                 <input type="color" id="cdot-color-picker" value="#000000">
                 <input type="text" class="hex-input" id="cdot-color-hex" value="#000000" maxlength="7">
@@ -408,21 +447,21 @@
           </div>
           <div class="color-panel" id="cdot-gradient-panel">
             <div class="field-row">
-              <span class="field-label">Τύπος</span>
+              <span class="field-label">Type</span>
               <select class="gradient-type-select" id="cdot-grad-type">
-                <option value="linear">Γραμμικό</option>
-                <option value="radial">Ακτινωτό</option>
+                <option value="linear">Linear</option>
+                <option value="radial">Radial</option>
               </select>
             </div>
             <div class="field-row">
-              <span class="field-label">Χρώμα 1</span>
+              <span class="field-label">Color 1</span>
               <div class="color-row">
                 <input type="color" id="cdot-grad-c1" value="#000000">
                 <input type="text" class="hex-input" id="cdot-grad-c1-hex" value="#000000" maxlength="7">
               </div>
             </div>
             <div class="field-row">
-              <span class="field-label">Χρώμα 2</span>
+              <span class="field-label">Color 2</span>
               <div class="color-row">
                 <input type="color" id="cdot-grad-c2" value="#2563eb">
                 <input type="text" class="hex-input" id="cdot-grad-c2-hex" value="#2563eb" maxlength="7">
@@ -432,21 +471,21 @@
         </div>
       </div>
 
-      <!-- 6. Φόντο -->
+      <!-- 6. Background -->
       <div class="acc-section collapsed" id="sec-bg">
-        <div class="acc-header" onclick="toggleAcc('sec-bg')">
-          <span class="acc-title"><span class="acc-title-icon">🎨</span>Φόντο</span>
+        <div class="acc-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleAcc('sec-bg')">
+          <span class="acc-title"><span class="acc-title-icon">🎨</span>Background</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
           <div class="bg-mode-tabs">
-            <button class="bg-mode-tab" data-bg="transparent">Διαφανές</button>
-            <button class="bg-mode-tab active" data-bg="solid">Μονόχρωμο</button>
-            <button class="bg-mode-tab" data-bg="gradient">Ντεγκραντέ</button>
+            <button class="bg-mode-tab" data-bg="transparent">Transparent</button>
+            <button class="bg-mode-tab active" data-bg="solid">Solid</button>
+            <button class="bg-mode-tab" data-bg="gradient">Gradient</button>
           </div>
           <div class="color-panel visible" id="bg-solid-panel">
             <div class="field-row">
-              <span class="field-label">Χρώμα</span>
+              <span class="field-label">Color</span>
               <div class="color-row">
                 <input type="color" id="bg-color-picker" value="#ffffff">
                 <input type="text" class="hex-input" id="bg-color-hex" value="#ffffff" maxlength="7">
@@ -455,21 +494,21 @@
           </div>
           <div class="color-panel" id="bg-gradient-panel">
             <div class="field-row">
-              <span class="field-label">Τύπος</span>
+              <span class="field-label">Type</span>
               <select class="gradient-type-select" id="bg-grad-type">
-                <option value="linear">Γραμμικό</option>
-                <option value="radial">Ακτινωτό</option>
+                <option value="linear">Linear</option>
+                <option value="radial">Radial</option>
               </select>
             </div>
             <div class="field-row">
-              <span class="field-label">Χρώμα 1</span>
+              <span class="field-label">Color 1</span>
               <div class="color-row">
                 <input type="color" id="bg-grad-c1" value="#ffffff">
                 <input type="text" class="hex-input" id="bg-grad-c1-hex" value="#ffffff" maxlength="7">
               </div>
             </div>
             <div class="field-row">
-              <span class="field-label">Χρώμα 2</span>
+              <span class="field-label">Color 2</span>
               <div class="color-row">
                 <input type="color" id="bg-grad-c2" value="#e0f2fe">
                 <input type="text" class="hex-input" id="bg-grad-c2-hex" value="#e0f2fe" maxlength="7">
@@ -477,71 +516,71 @@
             </div>
           </div>
           <div class="color-panel" id="bg-transparent-panel">
-            <p style="font-size:11px;color:var(--clr-muted);padding:4px 0">Το φόντο θα είναι διαφανές — PNG και SVG χωρίς γέμισμα.</p>
+            <p style="font-size:11px;color:var(--clr-muted);padding:4px 0">The background is transparent — PNG and SVG export with no fill.</p>
           </div>
         </div>
       </div>
 
-      <!-- 7. Λογότυπο / Εικόνα -->
+      <!-- 7. Logo / image -->
       <div class="acc-section collapsed" id="sec-logo">
-        <div class="acc-header" onclick="toggleAcc('sec-logo')">
-          <span class="acc-title"><span class="acc-title-icon">🖼️</span>Λογότυπο / Εικόνα</span>
+        <div class="acc-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleAcc('sec-logo')">
+          <span class="acc-title"><span class="acc-title-icon">🖼️</span>Logo / Image</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
-          <p class="section-label">Ενσωματωμένα Εικονίδια</p>
+          <p class="section-label">Built-in Icons</p>
           <div class="icon-grid" id="icon-grid"></div>
           <button class="clear-btn" id="icon-clear-btn">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Αφαίρεση εικόνας
+            Remove image
           </button>
           <div class="divider"></div>
-          <p class="section-label">Ανέβασμα δικής σας</p>
-          <div class="upload-area" onclick="document.getElementById('logo-file-input').click()">
+          <p class="section-label">Upload your own</p>
+          <div class="upload-area" role="button" tabindex="0" aria-label="Upload your own image" onclick="document.getElementById('logo-file-input').click()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Ανέβασμα εικόνας
+            Upload image
           </div>
           <input type="file" id="logo-file-input" accept="image/*" style="display:none">
           <div class="divider"></div>
           <div class="slider-row">
-            <div class="slider-header"><span class="field-label">Μέγεθος λογοτύπου</span><span class="slider-val" id="logo-size-val">40%</span></div>
-            <input type="range" id="logo-size" min="10" max="60" value="40">
+            <div class="slider-header"><span class="field-label">Logo size</span><span class="slider-val" id="logo-size-val">40%</span></div>
+            <input type="range" id="logo-size" min="10" max="100" value="40" aria-label="Logo size">
           </div>
           <div class="slider-row">
-            <div class="slider-header"><span class="field-label">Περιθώριο λογοτύπου</span><span class="slider-val" id="logo-margin-val">4</span></div>
-            <input type="range" id="logo-margin" min="0" max="20" value="4">
+            <div class="slider-header"><span class="field-label">Logo padding</span><span class="slider-val" id="logo-margin-val">4</span></div>
+            <input type="range" id="logo-margin" min="0" max="20" value="4" aria-label="Logo padding">
           </div>
           <div class="check-row">
             <input type="checkbox" id="logo-hide-dots" checked>
-            <label for="logo-hide-dots">Απόκρυψη κουκκίδων κάτω από λογότυπο</label>
+            <label for="logo-hide-dots">Hide dots behind the logo</label>
           </div>
-          <div id="logo-warning">⚠ Το λογότυπο είναι μεγάλο — χρησιμοποιήστε Διόρθωση Σφαλμάτων Η για αξιόπιστη ανάγνωση.</div>
+          <div id="logo-warning" role="status">⚠ The logo is large — use error correction level H for reliable scanning.</div>
         </div>
       </div>
 
-      <!-- 8. Περίγραμμα & Περιθώριο -->
+      <!-- 8. Border & margin -->
       <div class="acc-section collapsed" id="sec-margin">
-        <div class="acc-header" onclick="toggleAcc('sec-margin')">
-          <span class="acc-title"><span class="acc-title-icon">⬜</span>Περίγραμμα &amp; Περιθώριο</span>
+        <div class="acc-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleAcc('sec-margin')">
+          <span class="acc-title"><span class="acc-title-icon">⬜</span>Border &amp; Margin</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
           <div class="slider-row">
-            <div class="slider-header"><span class="field-label">Ήσυχη ζώνη (px)</span><span class="slider-val" id="margin-val">10</span></div>
-            <input type="range" id="qr-margin" min="0" max="50" value="10">
+            <div class="slider-header"><span class="field-label">Quiet zone (px)</span><span class="slider-val" id="margin-val">10</span></div>
+            <input type="range" id="qr-margin" min="0" max="50" value="10" aria-label="Quiet zone in pixels">
           </div>
         </div>
       </div>
 
-      <!-- 9. Διόρθωση Σφαλμάτων -->
+      <!-- 9. Error Correction -->
       <div class="acc-section collapsed" id="sec-ec">
-        <div class="acc-header" onclick="toggleAcc('sec-ec')">
-          <span class="acc-title"><span class="acc-title-icon">🛡️</span>Διόρθωση Σφαλμάτων</span>
+        <div class="acc-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleAcc('sec-ec')">
+          <span class="acc-title"><span class="acc-title-icon">🛡️</span>Error Correction</span>
           <span class="acc-arrow">▾</span>
         </div>
         <div class="acc-body">
           <div class="field-row">
-            <span class="field-label">Επίπεδο</span>
+            <span class="field-label">Level</span>
             <div class="segmented" id="ec-segmented">
               <button data-val="L">L</button>
               <button data-val="M" class="active">M</button>
@@ -549,7 +588,7 @@
               <button data-val="H">H</button>
             </div>
           </div>
-          <p style="font-size:11px;color:var(--clr-muted);margin-top:4px">L=7% · M=15% · Q=25% · H=30% ανάκτηση. Χρησιμοποιήστε Η όταν προσθέτετε λογότυπο.</p>
+          <p style="font-size:11px;color:var(--clr-muted);margin-top:4px">L=7% · M=15% · Q=25% · H=30% recovery. Use H when you add a logo.</p>
         </div>
       </div>
 
@@ -557,15 +596,17 @@
 
     <!-- Credits -->
     <div id="credits">
-      <a href="https://stellarpartners.gr/" target="_blank" rel="noopener">Δημιουργήθηκε με <span class="heart">♥</span> από την Stellar Partners</a>
+      <a href="https://stellarpartners.gr/" target="_blank" rel="noopener">Made with <span class="heart">♥</span> by Stellar Partners</a>
     </div>
 
     <!-- Download panel -->
     <div id="download-panel">
-      <div id="download-panel-header">Εξαγωγή</div>
+      <div id="download-panel-header">Export</div>
       <div id="download-row">
-        <select id="resolution-select">
+        <select id="resolution-select" aria-label="PNG and PDF export size">
+          <option value="1024">1024 px</option>
           <option value="2048" selected>2048 px</option>
+          <option value="4096">4096 px</option>
         </select>
         <button class="dl-btn" id="btn-png" onclick="exportPNG()">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PNG
@@ -577,39 +618,40 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PDF
         </button>
       </div>
+      <p id="export-empty-hint">Enter a URL or some text to export.</p>
     </div>
   </aside>
 
   <!-- ═══════════════ PREVIEW ════════════════════════════════ -->
   <main id="preview-area">
     <div id="undo-toolbar">
-      <button class="undo-btn" id="btn-undo" onclick="undoState()" disabled title="Αναίρεση (Ctrl+Z)">
+      <button class="undo-btn" id="btn-undo" onclick="undoState()" disabled title="Undo (Ctrl+Z)">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M3 13C5.5 7 11 4 17 6.5 21 8.5 22 13 21 17"/></svg>
       </button>
-      <button class="undo-btn" id="btn-redo" onclick="redoState()" disabled title="Επαναφορά (Ctrl+Y)">
+      <button class="undo-btn" id="btn-redo" onclick="redoState()" disabled title="Redo (Ctrl+Y)">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M21 13C18.5 7 13 4 7 6.5 3 8.5 2 13 3 17"/></svg>
       </button>
-      <span id="toolbar-label">Προεπισκόπηση QR</span>
+      <span id="toolbar-label">QR Preview</span>
     </div>
     <div id="qr-preview-wrap">
       <div id="qr-preview"></div>
     </div>
     <div id="preview-meta">
-      <span id="meta-ec">ΔΣ: M</span>
+      <span id="meta-ec">EC: M</span>
       <span id="meta-size">360 × 360</span>
     </div>
   </main>
 </div>
 
 <!-- ═══════════════ CONFIRMATION MODAL ════════════════════ -->
-<div id="confirm-overlay">
+<div id="confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
   <div id="confirm-modal">
     <div class="modal-icon">🗑️</div>
-    <h2>Εκκαθάριση όλων;</h2>
-    <p>Αυτή η ενέργεια θα επαναφέρει <strong>όλες</strong> τις ρυθμίσεις στις προεπιλογές και θα διαγράψει το αποθηκευμένο προφίλ. Η ενέργεια <strong>δεν αναιρείται</strong>.</p>
+    <h2 id="confirm-title">Clear everything?</h2>
+    <p>This resets <strong>all</strong> settings to their defaults and deletes the saved profile. This action <strong>cannot be undone</strong>.</p>
     <div class="modal-actions">
-      <button id="confirm-cancel" onclick="closeClearModal()">Ακύρωση</button>
-      <button id="confirm-ok" onclick="executeClearAll()">Ναι, εκκαθάριση</button>
+      <button id="confirm-cancel" onclick="closeClearModal()">Cancel</button>
+      <button id="confirm-ok" onclick="executeClearAll()">Yes, clear all</button>
     </div>
   </div>
 </div>
@@ -622,21 +664,21 @@
    Active tinting is handled by the CSS filter on .type-btn.active img
 ══════════════════════════════════════════════════════════ */
 const DOT_TYPES = [
-  { val:'square',         label:'Τετράγωνο',  icon:'shapes/dot-square.svg'        },
-  { val:'rounded',        label:'Στρογγυλό',  icon:'shapes/dot-rounded.svg'       },
-  { val:'dots',           label:'Κύκλοι',     icon:'shapes/dot-dots.svg'          },
-  { val:'classy',         label:'Κλασικό',    icon:'shapes/dot-classy.svg'        },
-  { val:'classy-rounded', label:'Κλασ. Στρ.', icon:'shapes/dot-classy-rounded.svg'},
-  { val:'extra-rounded',  label:'Εξ. Στρ.',   icon:'shapes/dot-extra-rounded.svg' },
+  { val:'square',         label:'Square',  icon:'shapes/dot-square.svg'        },
+  { val:'rounded',        label:'Rounded',  icon:'shapes/dot-rounded.svg'       },
+  { val:'dots',           label:'Dots',     icon:'shapes/dot-dots.svg'          },
+  { val:'classy',         label:'Classy',    icon:'shapes/dot-classy.svg'        },
+  { val:'classy-rounded', label:'Classy round', icon:'shapes/dot-classy-rounded.svg'},
+  { val:'extra-rounded',  label:'Extra round',   icon:'shapes/dot-extra-rounded.svg' },
 ];
 const CSQ_TYPES = [
-  { val:'square',        label:'Τετράγωνο', icon:'shapes/eye-square.svg'  },
-  { val:'extra-rounded', label:'Στρογγυλό', icon:'shapes/eye-rounded.svg' },
-  { val:'dot',           label:'Κύκλος',    icon:'shapes/eye-dot.svg'     },
+  { val:'square',        label:'Square', icon:'shapes/eye-square.svg'  },
+  { val:'extra-rounded', label:'Rounded', icon:'shapes/eye-rounded.svg' },
+  { val:'dot',           label:'Circle',    icon:'shapes/eye-dot.svg'     },
 ];
 const CDOT_TYPES = [
-  { val:'square', label:'Τετράγωνο', icon:'shapes/inner-square.svg' },
-  { val:'dot',    label:'Κύκλος',    icon:'shapes/inner-dot.svg'    },
+  { val:'square', label:'Square', icon:'shapes/inner-square.svg' },
+  { val:'dot',    label:'Circle',    icon:'shapes/inner-dot.svg'    },
 ];
 
 /* ══════════════════════════════════════════════════════════
@@ -653,10 +695,10 @@ const ICONS = [
   { id:'tiktok',    label:'TikTok',     file:'icons/tiktok.svg'    },
   { id:'whatsapp',  label:'WhatsApp',   file:'icons/whatsapp.svg'  },
   { id:'snapchat',  label:'Snapchat',   file:'icons/snapchat.svg'  },
-  { id:'globe',     label:'Ιστότοπος',  file:'icons/globe.svg'     },
+  { id:'globe',     label:'Website',  file:'icons/globe.svg'     },
   { id:'email',     label:'Email',      file:'icons/email.svg'     },
-  { id:'phone',     label:'Τηλέφωνο',   file:'icons/phone.svg'     },
-  { id:'location',  label:'Τοποθεσία',  file:'icons/location.svg'  },
+  { id:'phone',     label:'Phone',   file:'icons/phone.svg'     },
+  { id:'location',  label:'Location',  file:'icons/location.svg'  },
 ];
 
 /* ══════════════════════════════════════════════════════════
@@ -697,7 +739,7 @@ const TEMPLATES = {
   ],
   business: [
     {
-      id:'corporate', label:'Εταιρικό',
+      id:'corporate', label:'Corporate',
       opts:{
         dotsOptions:{ type:'rounded', color:'#1a2b4a' },
         cornersSquareOptions:{ type:'extra-rounded', color:'#1a2b4a' },
@@ -707,7 +749,7 @@ const TEMPLATES = {
       }
     },
     {
-      id:'minimal', label:'Μινιμαλ',
+      id:'minimal', label:'Minimal',
       opts:{
         dotsOptions:{ type:'square', color:'#b0b0b0' },
         cornersSquareOptions:{ type:'square', color:'#b0b0b0' },
@@ -717,7 +759,7 @@ const TEMPLATES = {
       }
     },
     {
-      id:'bold', label:'Έντονο',
+      id:'bold', label:'Bold',
       opts:{
         dotsOptions:{ type:'dots', color:'#000000' },
         cornersSquareOptions:{ type:'dot', color:'#000000' },
@@ -739,7 +781,7 @@ const TEMPLATES = {
       }
     },
     {
-      id:'soft', label:'Απαλό',
+      id:'soft', label:'Soft',
       opts:{
         dotsOptions:{ type:'dots', color:'#7c6f9c' },
         cornersSquareOptions:{ type:'extra-rounded', color:'#c9a8e0' },
@@ -749,7 +791,7 @@ const TEMPLATES = {
       }
     },
     {
-      id:'gradient', label:'Ντεγκραντέ',
+      id:'gradient', label:'Gradient',
       opts:{
         dotsOptions:{ type:'rounded', gradient:{ type:'linear', rotation:0.785, colorStops:[{offset:0,color:'#0ea5e9'},{offset:1,color:'#8b5cf6'}] } },
         cornersSquareOptions:{ type:'extra-rounded', color:'#0ea5e9' },
@@ -786,6 +828,7 @@ const colorModes = { dot:'solid', csq:'solid', cdot:'solid', bg:'solid' };
 
 const stateHistory = [];
 let historyIndex = -1;
+let lastCoalesceKey = null;
 const MAX_HISTORY = 50;
 let activeTemplate = null;
 
@@ -902,34 +945,73 @@ const _qrContainer = document.getElementById('qr-preview');
 let qrCode = new QRCodeStyling(sanitiseOptions(options));
 qrCode.append(_qrContainer);
 
+function hasData() {
+  return String(options.data || '').trim().length > 0;
+}
+
+// With no input there is nothing to encode. Rather than silently encoding a
+// single space (which is what the old `|| ' '` fallback did), show an empty
+// state and switch the export buttons off.
+function updateExportState() {
+  const empty = !hasData();
+  ['btn-png', 'btn-svg', 'btn-pdf'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = empty;
+  });
+  const hint = document.getElementById('export-empty-hint');
+  if (hint) hint.classList.toggle('visible', empty);
+}
+
 function renderQR() {
   _qrContainer.innerHTML = '';
+  if (!hasData()) {
+    const empty = document.createElement('div');
+    empty.id = 'qr-empty';
+    empty.textContent = 'Enter a URL or some text to generate a QR code.';
+    _qrContainer.appendChild(empty);
+    updateExportState();
+    scheduleLogoSizeLabel();
+    return;
+  }
   qrCode = new QRCodeStyling(sanitiseOptions(options));
   qrCode.append(_qrContainer);
+  updateExportState();
+  scheduleLogoSizeLabel();
 }
 
 /* ══════════════════════════════════════════════════════════
    UPDATE ENGINE
 ══════════════════════════════════════════════════════════ */
 let _ut = null;
-function triggerUpdate(skipHistory) {
+function triggerUpdate(skipHistory, coalesceKey) {
   clearTimeout(_ut);
   _ut = setTimeout(() => {
+    // A coalesceKey collapses consecutive edits of the same control into one
+    // undo step. Without it, every debounced keystroke in the URL field fills
+    // the 50-slot history and pushes real edits out of reach.
+    lastCoalesceKey = coalesceKey || null;
     renderQR();
-    if (!skipHistory) pushHistory();
+    if (!skipHistory) pushHistory(coalesceKey);
     updateMeta();
     saveToStorage();
   }, 120);
 }
 function updateMeta() {
-  document.getElementById('meta-ec').textContent = 'ΔΣ: ' + options.qrOptions.errorCorrectionLevel;
+  document.getElementById('meta-ec').textContent = 'EC: ' + options.qrOptions.errorCorrectionLevel;
   document.getElementById('meta-size').textContent = options.width + ' × ' + options.height;
 }
 
 /* ══════════════════════════════════════════════════════════
    HISTORY
 ══════════════════════════════════════════════════════════ */
-function pushHistory() {
+function pushHistory(coalesceKey) {
+  if (coalesceKey && coalesceKey === lastCoalesceKey && historyIndex >= 0) {
+    // Same control, still being edited: replace the top entry, do not grow.
+    stateHistory[historyIndex] = deepClone(options);
+    updateUndoBtns();
+    return;
+  }
+  lastCoalesceKey = coalesceKey || null;
   stateHistory.splice(historyIndex + 1);
   stateHistory.push(deepClone(options));
   if (stateHistory.length > MAX_HISTORY) stateHistory.shift();
@@ -962,7 +1044,12 @@ function updateUndoBtns() {
 /* ══════════════════════════════════════════════════════════
    ACCORDION
 ══════════════════════════════════════════════════════════ */
-function toggleAcc(id) { document.getElementById(id).classList.toggle('collapsed'); }
+function toggleAcc(id) {
+  const section = document.getElementById(id);
+  section.classList.toggle('collapsed');
+  const header = section.querySelector('.acc-header');
+  if (header) header.setAttribute('aria-expanded', section.classList.contains('collapsed') ? 'false' : 'true');
+}
 
 /* ══════════════════════════════════════════════════════════
    COLOUR PAIR BINDING
@@ -1105,12 +1192,62 @@ function buildIconGrid() {
   });
 }
 
+// qr-code-styling quantises the logo to whole QR modules and caps it far
+// below the requested fraction, so `imageSize` tells you nothing useful about
+// the result. Measure what is actually drawn, then report that.
+let _logoWidthPct = null;
+let _logoProbeTimer = null;
+
+function scheduleLogoSizeLabel() {
+  clearTimeout(_logoProbeTimer);
+  _logoProbeTimer = setTimeout(measureLogoSize, 220);
+}
+
+async function measureLogoSize(attempt) {
+  const label = document.getElementById('logo-size-val');
+  const slider = document.getElementById('logo-size');
+  if (!label || !slider) return;
+  if (!options.image || !hasData()) {
+    _logoWidthPct = null;
+    label.textContent = slider.value + '%';
+    checkLogoWarning();
+    return;
+  }
+  try {
+    // Off-screen SVG render: the only reliable way to read the drawn size.
+    const probe = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { type:'svg' }));
+    const svg = await (await probe.getRawData('svg')).text();
+    const match = svg.match(/<image[^>]*?width="([\d.]+)px"/);
+    if (!match) throw new Error('no <image> element in the SVG output');
+    _logoWidthPct = (parseFloat(match[1]) / options.width) * 100;
+    label.textContent = Math.round(_logoWidthPct) + '% of code';
+  } catch (e) {
+    // Retry once, then fall back honestly. Showing the requested percentage on
+    // failure would print a number nobody measured.
+    if ((attempt || 1) < 2) {
+      _logoProbeTimer = setTimeout(() => measureLogoSize((attempt || 1) + 1), 400);
+      return;
+    }
+    _logoWidthPct = null;
+    label.textContent = slider.value + '%';
+  }
+  checkLogoWarning();
+}
+
+// The warning compares the logo's AREA against the recovery capacity of the
+// chosen error-correction level — a linear size is not the right comparison.
 function checkLogoWarning() {
-  const size = options.imageOptions.imageSize;
-  const ec = options.qrOptions.errorCorrectionLevel;
   const cap = { L:.07, M:.15, Q:.25, H:.30 };
-  const warn = options.image && (size * size) > (cap[ec] * 0.8);
-  document.getElementById('logo-warning').classList.toggle('visible', !!warn);
+  const ec = options.qrOptions.errorCorrectionLevel;
+  let warn = false;
+  if (options.image) {
+    const linear = _logoWidthPct !== null
+      ? _logoWidthPct / 100
+      : (options.imageOptions.imageSize || 0.4) * 0.33;
+    warn = (linear * linear) > (cap[ec] * 0.8);
+  }
+  const el = document.getElementById('logo-warning');
+  if (el) el.classList.toggle('visible', warn);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1119,7 +1256,7 @@ function checkLogoWarning() {
 function buildTemplateGrid() {
   const body = document.getElementById('template-body');
   body.innerHTML = '';
-  [['social','Κοινωνικά'],['business','Επαγγελματικά'],['event','Εκδηλώσεις']].forEach(([key,label]) => {
+  [['social','Social'],['business','Business'],['event','Events']].forEach(([key,label]) => {
     const catLabel = document.createElement('div');
     catLabel.className = 'tpl-category-label';
     catLabel.textContent = label;
@@ -1239,6 +1376,41 @@ function syncUIFromState() {
   refreshTypeGrid('dot-type-grid', DOT_TYPES, options.dotsOptions && options.dotsOptions.type);
   refreshTypeGrid('csq-type-grid', CSQ_TYPES, options.cornersSquareOptions && options.cornersSquareOptions.type);
   refreshTypeGrid('cdot-type-grid', CDOT_TYPES, options.cornersDotOptions && options.cornersDotOptions.type);
+
+  // Gradient controls are part of the state. Without this, loading a template
+  // or a saved profile left stale values in the gradient inputs, and the next
+  // nudge silently overwrote the real gradient with them.
+  [['dot', 'dotsOptions'], ['csq', 'cornersSquareOptions'],
+   ['cdot', 'cornersDotOptions'], ['bg', 'backgroundOptions']].forEach(([t, key]) => {
+    const grad = options[key] && options[key].gradient;
+    if (!grad) return;
+    const typeEl = document.getElementById(t + '-grad-type');
+    if (typeEl && grad.type) typeEl.value = grad.type;
+    const stops = grad.colorStops || [];
+    if (stops[0]) setGradientColorFields(t + '-grad-c1', stops[0].color);
+    if (stops[1]) setGradientColorFields(t + '-grad-c2', stops[1].color);
+    if (t === 'dot' && typeof grad.rotation === 'number') {
+      const deg = Math.round(grad.rotation * 180 / Math.PI);
+      const rot = document.getElementById('dot-grad-rot');
+      if (rot) rot.value = deg;
+      const rotVal = document.getElementById('dot-grad-rot-val');
+      if (rotVal) rotVal.textContent = deg + '\u00b0';
+    }
+  });
+
+  // Logo size slider + its label, and the first warning check after a restore
+  const sizePct = Math.round((options.imageOptions.imageSize || 0.4) * 100);
+  const sizeSlider = document.getElementById('logo-size');
+  if (sizeSlider) sizeSlider.value = sizePct;
+  checkLogoWarning();
+  scheduleLogoSizeLabel();
+}
+
+function setGradientColorFields(baseId, color) {
+  const picker = document.getElementById(baseId);
+  if (picker) picker.value = color;
+  const hex = document.getElementById(baseId + '-hex');
+  if (hex) hex.value = String(color).toUpperCase();
 }
 
 function setColorModeUI(target, mode) {
@@ -1272,6 +1444,7 @@ function triggerDownload(url, name) {
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 async function exportPNG() {
+  if (!hasData()) return;
   const size = parseInt(document.getElementById('resolution-select').value);
   const hi = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width:size, height:size, type:'canvas' }));
   const blob = await hi.getRawData('png');
@@ -1280,6 +1453,7 @@ async function exportPNG() {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 async function exportSVG() {
+  if (!hasData()) return;
   const hi = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width:1000, height:1000, type:'svg' }));
   const blob = await hi.getRawData('svg');
   const url = URL.createObjectURL(blob);
@@ -1287,14 +1461,20 @@ async function exportSVG() {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 async function exportPDF() {
-  const hi = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width:1000, height:1000, type:'canvas' }));
+  if (!hasData()) return;
+  // Render at the selected PNG size (2048 minimum: 120 mm at 2048 px is
+  // ~433 dpi, plenty for print) and let jsPDF compress the raster.
+  const size = Math.max(2048, parseInt(document.getElementById('resolution-select').value) || 2048);
+  const hi = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width:size, height:size, type:'canvas' }));
   const blob = await hi.getRawData('png');
   const reader = new FileReader();
   reader.onload = () => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
     const qrMM = 120, x = (210-qrMM)/2, y = (297-qrMM)/2;
-    doc.addImage(reader.result, 'PNG', x, y, qrMM, qrMM);
+    // The 8th argument is the compression mode. Omitting it makes jsPDF embed
+    // the raw RGBA bitmap: one QR code produced a ~4 MB PDF.
+    doc.addImage(reader.result, 'PNG', x, y, qrMM, qrMM, undefined, 'FAST');
     doc.save('qrcode.pdf');
   };
   reader.readAsDataURL(blob);
@@ -1309,9 +1489,9 @@ function init() {
 
   // Text
   document.getElementById('qr-text').addEventListener('input', e => {
-    options.data = e.target.value || ' ';
+    options.data = e.target.value;
     activeTemplate = null;
-    triggerUpdate();
+    triggerUpdate(false, 'data');
   });
 
   // Type grids
@@ -1374,7 +1554,6 @@ function init() {
   document.getElementById('logo-size').addEventListener('input', e => {
     options.imageOptions.imageSize = parseInt(e.target.value) / 100;
     document.getElementById('logo-size-val').textContent = e.target.value + '%';
-    checkLogoWarning();
     triggerUpdate();
   });
   document.getElementById('logo-margin').addEventListener('input', e => {
@@ -1422,6 +1601,19 @@ function init() {
   // Grids
   buildIconGrid();
   buildTemplateGrid();
+
+  // Keyboard access for controls that are divs, not buttons
+  document.querySelectorAll('.acc-header').forEach(header => {
+    header.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); header.click(); }
+    });
+  });
+  const uploadArea = document.querySelector('.upload-area');
+  if (uploadArea) {
+    uploadArea.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); uploadArea.click(); }
+    });
+  }
 
   // Keyboard
   document.addEventListener('keydown', e => {
