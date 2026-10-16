@@ -1,2 +1,15 @@
 # QR Code Generator
+
+# Editor and agent tooling
 .claude/
+.vscode/
+.idea/
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+
+# Local scratch
+*.log
