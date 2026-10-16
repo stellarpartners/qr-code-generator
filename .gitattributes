@@ -1,0 +1,4 @@
+# Keep shell scripts at LF. A CRLF shebang is read as the command "bash\r",
+# which does not exist, so the script fails on Linux and macOS after a
+# Windows checkout. Everything else is left to the platform default.
+*.sh text eol=lf
