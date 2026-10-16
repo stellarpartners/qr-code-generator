@@ -189,10 +189,13 @@ your device. The saved profile lives in your browser's `localStorage` and
 
 ## Browser support
 
-Chrome, Edge, Firefox and Safari — current versions, desktop and mobile.
+Verified in Chromium-based browsers (Chrome, Edge) on desktop and at a mobile
+viewport (390 × 844). Firefox and Safari are **not** covered by the test matrix
+yet.
 
 The app uses `localStorage`, `canvas`, `FileReader` and CSS custom properties.
-All four are available in every browser released in the last several years.
+All four are long-standing standards, so current Firefox and Safari should work —
+but treat that as an expectation, not a test result.
 
 ## Project structure
 
