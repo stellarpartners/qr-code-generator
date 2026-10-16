@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Measure logo size — QR Code Generator dev tool</title>
+  <style>
+    body { font-family: ui-monospace, 'Cascadia Code', monospace; font-size: 13px;
+           background:#0f1115; color:#e6e6e6; padding:24px; margin:0; }
+    h1 { font-size:15px; margin:0 0 4px; }
+    p  { color:#9aa0a6; margin:0 0 20px; max-width:70em; }
+    table { border-collapse:collapse; }
+    td, th { border:1px solid #2a2f3a; padding:4px 10px; text-align:right; }
+    th { background:#171b22; }
+    td:first-child, th:first-child { text-align:left; }
+    .step { color:#7dd3fc; }
+    #qr { position:absolute; left:-9999px; top:0; }
+    .note { color:#fbbf24; margin-top:18px; }
+  </style>
+</head>
+<body>
+  <h1>Logo size: requested vs drawn</h1>
+  <p>
+    The library rounds the logo to whole QR modules and caps it below the
+    requested fraction, so <code>imageOptions.imageSize</code> does not equal
+    the fraction of the code you get. This page renders the same logo at every
+    value the app's slider can produce and prints the width the library
+    actually draws. Run it after upgrading <code>qr-code-styling</code>.
+  </p>
+
+  <table id="out">
+    <thead>
+      <tr><th>requested imageSize</th><th>slider label</th><th>drawn width (px)</th><th>drawn % of code</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="note" id="status">measuring…</div>
+  <div id="qr"></div>
+
+<script src="https://unpkg.com/qr-code-styling@1.9.2/lib/qr-code-styling.js"></script>
+<script>
+'use strict';
+
+const CANVAS = 1000;                       // measure at 1000 px for clean numbers
+const DATA   = 'https://stellarpartners.gr';
+const LOGO   = 'data:image/svg+xml;base64,' + btoa(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">' +
+  '<rect width="24" height="24" fill="#ff0000"/></svg>');
+
+// The same option object the app builds, minus the parts that do not matter here.
+function optionsFor(imageSize) {
+  return {
+    width: CANVAS, height: CANVAS, type: 'svg', data: DATA, margin: 10,
+    qrOptions: { errorCorrectionLevel: 'M' },
+    imageOptions: { hideBackgroundDots: true, imageSize: imageSize, margin: 4 },
+    dotsOptions: { type: 'square', color: '#000000' },
+    cornersSquareOptions: { type: 'square', color: '#000000' },
+    cornersDotOptions: { type: 'square', color: '#000000' },
+    backgroundOptions: { color: '#ffffff' },
+    image: LOGO
+  };
+}
+
+function drawnWidth(svgText) {
+  const m = svgText.match(/<image[^>]*?width="([\d.]+)px"/);
+  return m ? parseFloat(m[1]) : null;
+}
+
+(async function () {
+  const tbody = document.querySelector('#out tbody');
+  const rows = [];
+  // The app's slider runs 10..100 in steps of 10.
+  for (let pct = 10; pct <= 100; pct += 10) {
+    const imageSize = pct / 100;
+    const svg = await (await new QRCodeStyling(optionsFor(imageSize)).getRawData('svg')).text();
+    const px = drawnWidth(svg);
+    const share = px === null ? null : (px / CANVAS) * 100;
+    rows.push({ pct, imageSize, px, share });
+    const tr = document.createElement('tr');
+    const cells = [imageSize.toFixed(2), pct + '%', px === null ? '—' : px,
+                   share === null ? '—' : share.toFixed(1) + '%'];
+    cells.forEach((c, i) => {
+      const td = document.createElement('td');
+      td.textContent = c;
+      if (i === 2) td.className = 'step';
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  }
+
+  const distinct = [...new Set(rows.map(r => r.px))];
+  document.getElementById('status').textContent =
+    rows.length + ' values measured, ' + distinct.length + ' distinct sizes actually drawn: ' +
+    distinct.join(', ') + ' px';
+  console.log(rows);
+})();
+</script>
+</body>
+</html>
