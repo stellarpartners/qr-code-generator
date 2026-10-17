@@ -1,0 +1,30 @@
+# Security and caching headers for Cloudflare Pages.
+#
+# The app is one file with inline <style> and inline <script>, so the policy
+# needs 'unsafe-inline' in script-src and style-src. It still blocks requests to
+# any other origin, framing and object embedding, which is what matters for a
+# tool that handles pasted URLs and uploaded images.
+#
+# unpkg.com is allowed because the two libraries load from there, pinned by
+# version and checked by Subresource Integrity. Removing 'unsafe-inline' also
+# breaks the onclick=... handlers in index.html, so test before changing it.
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+  Cross-Origin-Opener-Policy: same-origin
+
+/icons/*
+  Cache-Control: public, max-age=604800
+
+/shapes/*
+  Cache-Control: public, max-age=604800
+
+/favicon.svg
+  Cache-Control: public, max-age=86400
+
+/og-image.png
+  Cache-Control: public, max-age=86400

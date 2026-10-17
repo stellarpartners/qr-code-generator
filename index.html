@@ -15,7 +15,13 @@
   <meta property="og:title" content="QR Code Generator — design, style &amp; export QR codes">
   <meta property="og:description" content="Style the dots, corners and background, add a logo, then export PNG, SVG or PDF. Runs entirely in your browser.">
   <meta property="og:url" content="https://qrcode.stellarpartners.gr/">
-  <meta name="twitter:card" content="summary">
+  <meta property="og:image" content="https://qrcode.stellarpartners.gr/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="QR Code Generator — a styled QR code on a dark blue card">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://qrcode.stellarpartners.gr/og-image.png">
   <!--
     Both libraries load from unpkg with a pinned version AND a Subresource
     Integrity hash. If unpkg ever serves different bytes, the browser refuses
@@ -24,8 +30,8 @@
   <script src="https://unpkg.com/qr-code-styling@1.9.2/lib/qr-code-styling.js"
           integrity="sha384-P7sw4KeI1SDhOs6wYFsBysIIHFqMTgG4y9vunEfL8ZuV0WhnHsh9MRu9Rso17MtY"
           crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"
-          integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk"
+  <script src="https://unpkg.com/jspdf@4.2.1/dist/jspdf.umd.min.js"
+          integrity="sha384-qovJwSBbRDPP5cEjCp8S0UP66wrvnjaa60XMOGzTNanrThcrGfXfnZkvgY8N1KT3"
           crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <style>
     /* ─── Reset ──────────────────────────────────────────────── */
@@ -212,8 +218,16 @@
     .check-row { display:flex; align-items:center; gap:var(--sp-sm); margin-bottom:8px; }
     .check-row label { font-size:12px; color:var(--clr-muted); cursor:pointer; }
 
-    #logo-warning { display:none; background:#fef3c7; border:1px solid #f59e0b; border-radius:var(--r-sm); padding:6px 8px; font-size:11px; color:#92400e; margin-top:6px; }
-    #logo-warning.visible { display:block; }
+    #logo-warning, #logo-upload-error { display:none; background:#fef3c7; border:1px solid #f59e0b; border-radius:var(--r-sm); padding:6px 8px; font-size:11px; color:#92400e; margin-top:6px; }
+    #logo-warning.visible, #logo-upload-error.visible { display:block; }
+
+    /* ─── Transient sidebar notice (storage full) ─────────────── */
+    #storage-warning {
+      display:none; background:#fef3c7; border-bottom:1px solid #f59e0b;
+      padding:6px var(--sp-md); font-size:11px; color:#92400e; flex-shrink:0;
+    }
+    #storage-warning.visible { display:block; }
+
 
     /* ─── Clear All button (sidebar header area) ───────────────── */
     #clear-all-btn {
@@ -255,6 +269,9 @@
     #qr-empty { display:flex; align-items:center; justify-content:center; text-align:center;
       width:360px; height:360px; padding:var(--sp-lg); font-size:13px; color:var(--clr-muted);
       border:2px dashed var(--clr-border); border-radius:var(--r-md); }
+    /* Render failure: the text is too long for the chosen error correction level. */
+    #qr-empty.error { border-color:#fca5a5; background:#fef2f2; color:#b91c1c; font-weight:500; }
+
     .dl-btn:disabled { opacity:.45; cursor:not-allowed; }
     #export-empty-hint { display:none; font-size:11px; color:#92400e; margin-top:6px; text-align:center; }
     #export-empty-hint.visible { display:block; }
@@ -296,6 +313,7 @@
         </button>
       </div>
     </div>
+    <p id="storage-warning" role="status">This design is too large to save in this browser, so it will reset when you reload. Remove the uploaded logo or use a smaller image.</p>
 
     <div id="sidebar-scroll">
 
@@ -308,7 +326,7 @@
         <div class="acc-body">
           <div class="field-full">
             <span class="field-label">URL or text</span>
-            <textarea id="qr-text" placeholder="https://example.com" spellcheck="false">https://example.com</textarea>
+            <textarea id="qr-text" placeholder="https://example.com" spellcheck="false" aria-label="URL or text to encode">https://example.com</textarea>
           </div>
         </div>
       </div>
@@ -347,7 +365,7 @@
           <div class="color-panel" id="dot-gradient-panel">
             <div class="field-row">
               <span class="field-label">Type</span>
-              <select class="gradient-type-select" id="dot-grad-type">
+              <select class="gradient-type-select" id="dot-grad-type" aria-label="Dot gradient type">
                 <option value="linear">Linear</option>
                 <option value="radial">Radial</option>
               </select>
@@ -401,7 +419,7 @@
           <div class="color-panel" id="csq-gradient-panel">
             <div class="field-row">
               <span class="field-label">Type</span>
-              <select class="gradient-type-select" id="csq-grad-type">
+              <select class="gradient-type-select" id="csq-grad-type" aria-label="Corner square gradient type">
                 <option value="linear">Linear</option>
                 <option value="radial">Radial</option>
               </select>
@@ -448,7 +466,7 @@
           <div class="color-panel" id="cdot-gradient-panel">
             <div class="field-row">
               <span class="field-label">Type</span>
-              <select class="gradient-type-select" id="cdot-grad-type">
+              <select class="gradient-type-select" id="cdot-grad-type" aria-label="Corner dot gradient type">
                 <option value="linear">Linear</option>
                 <option value="radial">Radial</option>
               </select>
@@ -495,7 +513,7 @@
           <div class="color-panel" id="bg-gradient-panel">
             <div class="field-row">
               <span class="field-label">Type</span>
-              <select class="gradient-type-select" id="bg-grad-type">
+              <select class="gradient-type-select" id="bg-grad-type" aria-label="Background gradient type">
                 <option value="linear">Linear</option>
                 <option value="radial">Radial</option>
               </select>
@@ -540,7 +558,8 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Upload image
           </div>
-          <input type="file" id="logo-file-input" accept="image/*" style="display:none">
+          <input type="file" id="logo-file-input" accept="image/*" style="display:none" aria-label="Upload your own image">
+          <div id="logo-upload-error" role="alert">That file could not be read as an image. Try a PNG, JPEG, SVG or WebP file.</div>
           <div class="divider"></div>
           <div class="slider-row">
             <div class="slider-header"><span class="field-label">Logo size</span><span class="slider-val" id="logo-size-val">40%</span></div>
@@ -553,6 +572,10 @@
           <div class="check-row">
             <input type="checkbox" id="logo-hide-dots" checked>
             <label for="logo-hide-dots">Hide dots behind the logo</label>
+          </div>
+          <div class="check-row">
+            <input type="checkbox" id="logo-plate" checked>
+            <label for="logo-plate">White plate behind the logo</label>
           </div>
           <div id="logo-warning" role="status">⚠ The logo is large — use error correction level H for reliable scanning.</div>
         </div>
@@ -625,10 +648,10 @@
   <!-- ═══════════════ PREVIEW ════════════════════════════════ -->
   <main id="preview-area">
     <div id="undo-toolbar">
-      <button class="undo-btn" id="btn-undo" onclick="undoState()" disabled title="Undo (Ctrl+Z)">
+      <button class="undo-btn" id="btn-undo" onclick="undoState()" disabled title="Undo (Ctrl+Z)" aria-label="Undo">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M3 13C5.5 7 11 4 17 6.5 21 8.5 22 13 21 17"/></svg>
       </button>
-      <button class="undo-btn" id="btn-redo" onclick="redoState()" disabled title="Redo (Ctrl+Y)">
+      <button class="undo-btn" id="btn-redo" onclick="redoState()" disabled title="Redo (Ctrl+Y)" aria-label="Redo">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M21 13C18.5 7 13 4 7 6.5 3 8.5 2 13 3 17"/></svg>
       </button>
       <span id="toolbar-label">QR Preview</span>
@@ -811,7 +834,7 @@ const DEFAULT_OPTIONS = {
   data:'https://example.com',
   margin:10,
   qrOptions:{ errorCorrectionLevel:'M' },
-  imageOptions:{ hideBackgroundDots:true, imageSize:0.4, margin:4 },
+  imageOptions:{ hideBackgroundDots:true, imageSize:0.4, margin:4, plate:true },
   dotsOptions:{ color:'#000000', type:'square' },
   cornersSquareOptions:{ color:'#000000', type:'square' },
   cornersDotOptions:{ color:'#000000', type:'square' },
@@ -844,6 +867,86 @@ function sanitiseOptions(opts) {
     if (clean[k] && clean[k].gradient === undefined) delete clean[k].gradient;
   });
   if (!clean.image) delete clean.image;
+  // `plate` is ours, not the library's. Remove it so the library never sees it.
+  if (clean.imageOptions) delete clean.imageOptions.plate;
+  return clean;
+}
+
+/* ══════════════════════════════════════════════════════════
+   LOGO BACKING PLATE
+   A dark brand mark (X, TikTok) on a dark background is invisible,
+   and the library leaves a transparent hole where it hides the dots.
+   So we draw a white rounded plate behind the logo ourselves and pass
+   the composed image to the library. The composed result is cached per
+   source; toggling the option falls back to the raw image.
+══════════════════════════════════════════════════════════ */
+const PLATE_PX = 512;    // 512 px covers a 23 mm logo at ~565 dpi, so it holds up in print
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function composePlate(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas');
+        c.width = PLATE_PX; c.height = PLATE_PX;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        roundRect(ctx, 0, 0, PLATE_PX, PLATE_PX, PLATE_PX * 0.18);
+        ctx.fill();
+        const pad = PLATE_PX * 0.13;
+        const box = PLATE_PX - pad * 2;
+        const scale = Math.min(box / img.width, box / img.height) || 1;
+        const w = img.width * scale, h = img.height * scale;
+        ctx.drawImage(img, (PLATE_PX - w) / 2, (PLATE_PX - h) / 2, w, h);
+        resolve(c.toDataURL('image/png'));
+      } catch (e) { reject(e); }
+    };
+    img.onerror = () => reject(new Error('the image could not be decoded'));
+    img.src = src;
+  });
+}
+
+let _plateSrc = null, _plateUrl = null, _platePending = null, _plateFailed = null;
+
+function imageForRender() {
+  const src = options.image;
+  if (!src) return null;
+  if (!options.imageOptions || options.imageOptions.plate === false) return src;
+  if (_plateSrc === src && _plateUrl) return _plateUrl;
+  if (_plateFailed === src) return src;   // do not retry a source that cannot be drawn
+
+  // First paint uses the raw logo; the plate appears one tick later.
+  if (!_platePending || _platePending.src !== src) {
+    _platePending = {
+      src,
+      promise: composePlate(src).then(url => {
+        _platePending = null;
+        if (options.image !== src) return null;
+        _plateSrc = src; _plateUrl = url;
+        renderQR();
+        return url;
+      }).catch(() => { _platePending = null; _plateFailed = src; return null; })
+    };
+  }
+  return src;
+}
+
+// The option object the library receives: state minus our own flags,
+// with the composed logo in place of the raw one.
+function optionsForLibrary() {
+  const clean = sanitiseOptions(options);
+  const img = imageForRender();
+  if (img) clean.image = img; else delete clean.image;
   return clean;
 }
 
@@ -852,11 +955,24 @@ function sanitiseOptions(opts) {
 ══════════════════════════════════════════════════════════ */
 const STORAGE_KEY = 'qrgen_config_v1';
 
+function showStorageWarning(visible) {
+  const el = document.getElementById('storage-warning');
+  if (el) el.classList.toggle('visible', !!visible);
+}
+
+// Returns false when the browser refuses the payload (usually a quota error
+// after a large uploaded logo). Callers do not need the value; the warning is
+// shown here so the user learns why nothing is being remembered.
 function saveToStorage() {
   try {
     const payload = { options: deepClone(options), colorModes: deepClone(colorModes) };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  } catch(e) {}
+    showStorageWarning(false);
+    return true;
+  } catch(e) {
+    showStorageWarning(true);
+    return false;
+  }
 }
 
 function loadFromStorage() {
@@ -875,17 +991,41 @@ function loadFromStorage() {
 
 function clearStorage() {
   try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  showStorageWarning(false);
 }
 
 /* ══════════════════════════════════════════════════════════
    CONFIRM MODAL (Clear All)
 ══════════════════════════════════════════════════════════ */
+let _modalReturnFocus = null;
+
 function confirmClearAll() {
-  document.getElementById('confirm-overlay').classList.add('visible');
+  _modalReturnFocus = document.activeElement;
+  const overlay = document.getElementById('confirm-overlay');
+  overlay.classList.add('visible');
+  // Move focus into the dialog, otherwise keyboard and screen-reader users
+  // stay behind it and Tab walks the page underneath.
+  const cancel = document.getElementById('confirm-cancel');
+  if (cancel) cancel.focus();
 }
 function closeClearModal() {
-  document.getElementById('confirm-overlay').classList.remove('visible');
+  const overlay = document.getElementById('confirm-overlay');
+  if (!overlay.classList.contains('visible')) return;
+  overlay.classList.remove('visible');
+  if (_modalReturnFocus && typeof _modalReturnFocus.focus === 'function') {
+    _modalReturnFocus.focus();
+  }
+  _modalReturnFocus = null;
 }
+// Keep Tab inside the dialog while it is open.
+document.getElementById('confirm-overlay').addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return;
+  const items = [...document.querySelectorAll('#confirm-modal button')];
+  if (!items.length) return;
+  const first = items[0], last = items[items.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
 function executeClearAll() {
   closeClearModal();
 
@@ -914,6 +1054,9 @@ function executeClearAll() {
   buildTypeGrid('csq-type-grid',  CSQ_TYPES,  () => options.cornersSquareOptions.type, v => { options.cornersSquareOptions.type = v; });
   buildTypeGrid('cdot-type-grid', CDOT_TYPES, () => options.cornersDotOptions.type,    v => { options.cornersDotOptions.type = v; });
 
+  // ── 5b. Forget the cached logo plate; the image is gone ──
+  _plateSrc = null; _plateUrl = null; _platePending = null; _plateFailed = null;
+
   // ── 6. Sync all other UI fields from the clean state ──
   syncUIFromState();
 
@@ -926,6 +1069,7 @@ function executeClearAll() {
   // ── 9. Reset undo/redo history to a clean slate ──
   stateHistory.length = 0;
   historyIndex = -1;
+  lastCoalesceKey = null;
   pushHistory();
   updateMeta();
 }
@@ -949,21 +1093,40 @@ function hasData() {
   return String(options.data || '').trim().length > 0;
 }
 
+// Set when the library refuses the payload, usually because the text is longer
+// than the chosen error correction level allows.
+let _renderError = null;
+
+const EMPTY_HINT = 'Enter a URL or some text to export.';
+
+function friendlyQrError(err) {
+  const msg = String((err && err.message) || err || '');
+  if (/code length overflow|data too long|too long/i.test(msg)) {
+    return 'This text is too long for a QR code at this error correction level. Shorten it, or choose a lower level.';
+  }
+  return 'The QR code could not be generated: ' + (msg || 'unknown error') + '.';
+}
+
 // With no input there is nothing to encode. Rather than silently encoding a
 // single space (which is what the old `|| ' '` fallback did), show an empty
-// state and switch the export buttons off.
+// state and switch the export buttons off. The same path covers a render
+// failure: the preview and the export buttons must never lie about the state.
 function updateExportState() {
-  const empty = !hasData();
+  const blocked = !hasData() || !!_renderError;
   ['btn-png', 'btn-svg', 'btn-pdf'].forEach(id => {
     const btn = document.getElementById(id);
-    if (btn) btn.disabled = empty;
+    if (btn) btn.disabled = blocked;
   });
   const hint = document.getElementById('export-empty-hint');
-  if (hint) hint.classList.toggle('visible', empty);
+  if (hint) {
+    hint.textContent = _renderError ? _renderError : EMPTY_HINT;
+    hint.classList.toggle('visible', blocked);
+  }
 }
 
 function renderQR() {
   _qrContainer.innerHTML = '';
+  _renderError = null;
   if (!hasData()) {
     const empty = document.createElement('div');
     empty.id = 'qr-empty';
@@ -973,8 +1136,20 @@ function renderQR() {
     scheduleLogoSizeLabel();
     return;
   }
-  qrCode = new QRCodeStyling(sanitiseOptions(options));
-  qrCode.append(_qrContainer);
+  try {
+    qrCode = new QRCodeStyling(optionsForLibrary());
+    qrCode.append(_qrContainer);
+  } catch (err) {
+    // The container is already empty, so show a message instead of a blank box.
+    _renderError = friendlyQrError(err);
+    _qrContainer.innerHTML = '';
+    const box = document.createElement('div');
+    box.id = 'qr-empty';
+    box.className = 'error';
+    box.setAttribute('role', 'alert');
+    box.textContent = _renderError;
+    _qrContainer.appendChild(box);
+  }
   updateExportState();
   scheduleLogoSizeLabel();
 }
@@ -986,11 +1161,11 @@ let _ut = null;
 function triggerUpdate(skipHistory, coalesceKey) {
   clearTimeout(_ut);
   _ut = setTimeout(() => {
-    // A coalesceKey collapses consecutive edits of the same control into one
-    // undo step. Without it, every debounced keystroke in the URL field fills
-    // the 50-slot history and pushes real edits out of reach.
-    lastCoalesceKey = coalesceKey || null;
     renderQR();
+    // The coalesce key is passed to pushHistory, which decides whether this
+    // edit extends the previous undo step. Do not pre-set lastCoalesceKey here
+    // — doing so made the guard below always true and cost every text edit its
+    // own undo entry.
     if (!skipHistory) pushHistory(coalesceKey);
     updateMeta();
     saveToStorage();
@@ -1007,6 +1182,8 @@ function updateMeta() {
 function pushHistory(coalesceKey) {
   if (coalesceKey && coalesceKey === lastCoalesceKey && historyIndex >= 0) {
     // Same control, still being edited: replace the top entry, do not grow.
+    // Any redo branch is invalid now, so drop it before replacing.
+    stateHistory.splice(historyIndex + 1);
     stateHistory[historyIndex] = deepClone(options);
     updateUndoBtns();
     return;
@@ -1030,6 +1207,7 @@ function redoState() {
 }
 function applySnapshot(snap) {
   Object.assign(options, deepClone(snap));
+  lastCoalesceKey = null;   // the next edit starts a new undo step
   syncUIFromState();
   renderQR();
   updateMeta();
@@ -1178,6 +1356,7 @@ function buildIconGrid() {
       document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       options.image = icon.file;
+      _plateFailed = null;
       checkLogoWarning();
       triggerUpdate();
     });
@@ -1213,9 +1392,10 @@ async function measureLogoSize(attempt) {
     checkLogoWarning();
     return;
   }
+  if (_renderError) return;   // nothing was drawn, so there is nothing to measure
   try {
     // Off-screen SVG render: the only reliable way to read the drawn size.
-    const probe = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { type:'svg' }));
+    const probe = new QRCodeStyling(Object.assign({}, optionsForLibrary(), { type:'svg' }));
     const svg = await (await probe.getRawData('svg')).text();
     const match = svg.match(/<image[^>]*?width="([\d.]+)px"/);
     if (!match) throw new Error('no <image> element in the SVG output');
@@ -1336,6 +1516,8 @@ function syncUIFromState() {
   document.getElementById('logo-margin').value = logoMarginVal;
   document.getElementById('logo-margin-val').textContent = logoMarginVal;
   document.getElementById('logo-hide-dots').checked = !!options.imageOptions.hideBackgroundDots;
+  const plateBox = document.getElementById('logo-plate');
+  if (plateBox) plateBox.checked = options.imageOptions.plate !== false;
 
   // Dots — detect if gradient is set
   const dotsHasGrad = !!(options.dotsOptions && options.dotsOptions.gradient);
@@ -1443,41 +1625,68 @@ function triggerDownload(url, name) {
   const a = document.createElement('a'); a.href = url; a.download = name;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
+
+function canExport() {
+  if (!hasData()) return false;
+  if (_renderError) { updateExportState(); return false; }
+  return true;
+}
+
+// A failed export must say so. Before this, a rejected getRawData() left an
+// unhandled rejection in the console and a button that appeared to do nothing.
+function reportExportFailure(err) {
+  console.error(err);
+  const hint = document.getElementById('export-empty-hint');
+  if (hint) {
+    hint.textContent = 'The export failed. ' + ((err && err.message) ? err.message : 'Try a smaller size.');
+    hint.classList.add('visible');
+  }
+}
+
 async function exportPNG() {
-  if (!hasData()) return;
-  const size = parseInt(document.getElementById('resolution-select').value);
-  const hi = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width:size, height:size, type:'canvas' }));
-  const blob = await hi.getRawData('png');
-  const url = URL.createObjectURL(blob);
-  triggerDownload(url, `qrcode-${size}.png`);
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  if (!canExport()) return;
+  try {
+    const size = parseInt(document.getElementById('resolution-select').value);
+    const hi = new QRCodeStyling(Object.assign({}, optionsForLibrary(), { width:size, height:size, type:'canvas' }));
+    const blob = await hi.getRawData('png');
+    const url = URL.createObjectURL(blob);
+    triggerDownload(url, `qrcode-${size}.png`);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  } catch (err) { reportExportFailure(err); }
 }
 async function exportSVG() {
-  if (!hasData()) return;
-  const hi = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width:1000, height:1000, type:'svg' }));
-  const blob = await hi.getRawData('svg');
-  const url = URL.createObjectURL(blob);
-  triggerDownload(url, 'qrcode.svg');
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  if (!canExport()) return;
+  try {
+    const hi = new QRCodeStyling(Object.assign({}, optionsForLibrary(), { width:1000, height:1000, type:'svg' }));
+    const blob = await hi.getRawData('svg');
+    const url = URL.createObjectURL(blob);
+    triggerDownload(url, 'qrcode.svg');
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  } catch (err) { reportExportFailure(err); }
 }
 async function exportPDF() {
-  if (!hasData()) return;
-  // Render at the selected PNG size (2048 minimum: 120 mm at 2048 px is
-  // ~433 dpi, plenty for print) and let jsPDF compress the raster.
-  const size = Math.max(2048, parseInt(document.getElementById('resolution-select').value) || 2048);
-  const hi = new QRCodeStyling(Object.assign({}, sanitiseOptions(options), { width:size, height:size, type:'canvas' }));
-  const blob = await hi.getRawData('png');
-  const reader = new FileReader();
-  reader.onload = () => {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-    const qrMM = 120, x = (210-qrMM)/2, y = (297-qrMM)/2;
-    // The 8th argument is the compression mode. Omitting it makes jsPDF embed
-    // the raw RGBA bitmap: one QR code produced a ~4 MB PDF.
-    doc.addImage(reader.result, 'PNG', x, y, qrMM, qrMM, undefined, 'FAST');
-    doc.save('qrcode.pdf');
-  };
-  reader.readAsDataURL(blob);
+  if (!canExport()) return;
+  try {
+    // Render at the selected PNG size (2048 minimum: 120 mm at 2048 px is
+    // ~433 dpi, plenty for print) and let jsPDF compress the raster.
+    const size = Math.max(2048, parseInt(document.getElementById('resolution-select').value) || 2048);
+    const hi = new QRCodeStyling(Object.assign({}, optionsForLibrary(), { width:size, height:size, type:'canvas' }));
+    const blob = await hi.getRawData('png');
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+        const qrMM = 120, x = (210-qrMM)/2, y = (297-qrMM)/2;
+        // The 8th argument is the compression mode. Omitting it makes jsPDF embed
+        // the raw RGBA bitmap: one QR code produced a ~4 MB PDF.
+        doc.addImage(reader.result, 'PNG', x, y, qrMM, qrMM, undefined, 'FAST');
+        doc.save('qrcode.pdf');
+      } catch (err) { reportExportFailure(err); }
+    };
+    reader.onerror = () => reportExportFailure(reader.error);
+    reader.readAsDataURL(blob);
+  } catch (err) { reportExportFailure(err); }
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1565,18 +1774,53 @@ function init() {
     options.imageOptions.hideBackgroundDots = e.target.checked;
     triggerUpdate();
   });
+  document.getElementById('logo-plate').addEventListener('change', e => {
+    options.imageOptions.plate = e.target.checked;
+    _plateSrc = null; _plateUrl = null; _platePending = null; _plateFailed = null;
+    triggerUpdate();
+  });
 
-  // Logo upload
+  // Logo upload — downscaled before it becomes state, because a phone photo
+  // as base64 overflows the localStorage quota and kills all persistence.
+  const MAX_UPLOAD_PX = 512;
+  const uploadError = document.getElementById('logo-upload-error');
+
+  function showUploadError(show) {
+    if (uploadError) uploadError.classList.toggle('visible', !!show);
+  }
+
+  function downscaleDataUrl(dataUrl) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, MAX_UPLOAD_PX / Math.max(img.width, img.height));
+        if (scale === 1 && dataUrl.length < 200000) { resolve(dataUrl); return; }
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        try { resolve(c.toDataURL('image/png')); } catch (e) { resolve(dataUrl); }
+      };
+      img.onerror = () => resolve(null);
+      img.src = dataUrl;
+    });
+  }
+
   document.getElementById('logo-file-input').addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
+    showUploadError(false);
     const reader = new FileReader();
-    reader.onload = ev => {
-      options.image = ev.target.result;
+    reader.onload = async ev => {
+      const scaled = await downscaleDataUrl(ev.target.result);
+      if (!scaled) { showUploadError(true); return; }
+      options.image = scaled;
+      _plateSrc = null; _plateUrl = null; _platePending = null;
       document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
       checkLogoWarning();
       triggerUpdate();
     };
+    reader.onerror = () => showUploadError(true);
     reader.readAsDataURL(file);
   });
 
@@ -1616,10 +1860,32 @@ function init() {
   }
 
   // Keyboard
+  // Undo and redo belong to the app, but only outside text fields: Ctrl+Z in
+  // the URL box must undo the typing, not the last colour change.
+  function isTextEntry(el) {
+    if (!el) return false;
+    if (el.isContentEditable) return true;
+    return /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
+  }
   document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeClearModal(); return; }
+    if (isTextEntry(e.target)) return;
     if ((e.ctrlKey||e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undoState(); }
     if ((e.ctrlKey||e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redoState(); }
-    if (e.key === 'Escape') closeClearModal();
+  });
+
+  // Accessible names for the colour controls. They sit next to a <span>, not a
+  // <label>, so screen readers announced "colour picker" with no context.
+  document.querySelectorAll('.color-row').forEach(row => {
+    const section = row.closest('.acc-section');
+    const sectionName = section ? (section.querySelector('.acc-title').textContent || '').replace(/[^\w\s&/-]/g, '').trim() : '';
+    const labelEl = row.closest('.field-row') && row.closest('.field-row').querySelector('.field-label');
+    const fieldName = labelEl ? labelEl.textContent.trim() : 'Colour';
+    const name = [sectionName, fieldName].filter(Boolean).join(' ');
+    row.querySelectorAll('input').forEach(inp => {
+      if (inp.hasAttribute('aria-label')) return;
+      inp.setAttribute('aria-label', inp.type === 'color' ? name : name + ' (hex value)');
+    });
   });
 
   // Boot — sync UI from state (covers both fresh start and restored config)
