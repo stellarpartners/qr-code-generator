@@ -10,10 +10,20 @@ Thanks for looking. This is a small tool and it should stay small.
   the browser.
 - **No new runtime dependencies** without a good reason. Say why in the pull
   request. If you add one, pin the version and add its Subresource Integrity
-  hash (run `./tools/check-integrity.sh`).
+  hash (run `python3 tools/check-integrity.py --verify`).
 - **Keep it in English.** The interface and the documentation are English.
 
 ## Before you open a pull request
+
+Run the two checks CI runs first — they catch a stale integrity hash and a
+broken inline script before the deploy does:
+
+```bash
+python3 tools/check-html.py
+python3 tools/check-integrity.py --verify
+```
+
+Then:
 
 1. Serve the folder and open it in a real browser:
 

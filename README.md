@@ -24,8 +24,14 @@ no account. Nothing you type leaves your browser.
   image.
 - **Export to PNG (1024 / 2048 / 4096 px), SVG (vector) or PDF (A4).**
 - **Background can be transparent** — useful for PNG and SVG overlays.
+- **A white plate behind the logo**, so a dark brand mark stays visible on a
+  dark background instead of disappearing into the quiet zone.
 - **Undo and redo** with `Ctrl+Z` / `Ctrl+Y`, 50 steps deep.
 - **Your work is remembered** in `localStorage`, so a reload does not lose it.
+  Uploaded images are downscaled to 512 px first, because a full-size phone
+  photo overflows the browser quota and stops the saving without a word.
+- **Clear errors instead of a blank preview.** Text too long for the chosen
+  error correction level shows a message and switches the export buttons off.
 - **Clear all** resets everything back to defaults, behind a confirmation.
 
 ## Quick start
@@ -203,6 +209,10 @@ but treat that as an expectation, not a test result.
 index.html      the entire application: markup, CSS and JavaScript
 404.html        not-found page for the static host
 favicon.svg     site icon
+og-image.png    1200 x 630 social preview card for link shares
+_headers        security and caching headers for Cloudflare Pages
+SECURITY.md     how to report a vulnerability
+.github/        CI: HTML checks and CDN hash verification
 icons/          12 social and contact icons, used as QR centre logos
 shapes/         11 shape preview icons for the style pickers
 tools/          build-free helper scripts (see below)
@@ -213,7 +223,8 @@ tools/          build-free helper scripts (see below)
 | Script | What it does |
 |---|---|
 | `tools/measure-logo-size.html` | Opens a page that renders a logo at every slider value and prints the size the library actually draws. Run it after a library upgrade. |
-| `tools/check-integrity.sh` | Recomputes the Subresource Integrity hashes for the two CDN libraries. Run it when you bump a library version. |
+| `tools/check-integrity.py` | Recomputes the Subresource Integrity hashes for the two CDN libraries. `--verify` exits non-zero when `index.html` and the bytes unpkg serves disagree — this is what CI runs. |
+| `tools/check-html.py` | Duplicate ids, images without `alt`, and a syntax check of the inline script. Runs in CI. |
 
 ## Deployment
 
@@ -242,7 +253,7 @@ The app stands on two open-source libraries:
 | Library | Version | Licence | Used for |
 |---|---|---|---|
 | [qr-code-styling](https://github.com/qr-code-styling/qr-code-styling) | 1.9.2 | MIT | Rendering the styled QR code |
-| [jsPDF](https://github.com/parallax/jsPDF) | 2.5.1 | MIT | Building the PDF export |
+| [jsPDF](https://github.com/parallax/jsPDF) | 4.2.1 | MIT | Building the PDF export |
 
 ### Trademarks
 
